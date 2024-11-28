@@ -1,23 +1,42 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- 侧边栏 -->
-    <aside class="fixed left-0 top-0 h-full w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
-      <div class="p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center space-x-3">
-          <img src="/ms-todo-logo.webp" alt="Logo" class="w-6 h-6" />
-          <h1 class="text-xl font-semibold text-gray-900 dark:text-white">我的清单</h1>
+    <!-- 顶部导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm z-10">
+      <div class="h-full px-4 flex items-center justify-between">
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">待办事项</h1>
+        <div class="flex items-center space-x-4">
+          <button
+            @click="themeStore.toggleDarkMode"
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+          >
+            <Icon
+              :icon="themeStore.isDark ? 'ph:sun-bold' : 'ph:moon-bold'"
+              class="w-5 h-5 text-gray-600 dark:text-gray-400"
+            />
+          </button>
+          
+          <div class="relative group">
+            <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+              <Icon icon="ph:user-circle" class="w-8 h-8 text-gray-600 dark:text-gray-400" />
+              <span class="text-sm text-gray-700 dark:text-gray-300">{{ authStore.username }}</span>
+              <Icon icon="ph:caret-down" class="w-4 h-4 text-gray-500" />
+            </button>
+            
+            <div class="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 hidden group-hover:block">
+              <button
+                @click="authStore.logout"
+                class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                退出登录
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          @click="themeStore.toggleDarkMode"
-          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
-        >
-          <Icon
-            :icon="themeStore.isDark ? 'ph:sun-bold' : 'ph:moon-bold'"
-            class="w-5 h-5 text-gray-600 dark:text-gray-400"
-          />
-        </button>
       </div>
+    </nav>
 
+    <!-- 侧边栏 -->
+    <aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg">
       <div class="p-4">
         <!-- 进度统计 -->
         <div class="mb-6">
@@ -37,19 +56,6 @@
             <span>已完成 {{ todoStore.completionStats.completed }} 项</span>
             <span>共 {{ todoStore.completionStats.total }} 项</span>
           </div>
-        </div>
-
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex items-center space-x-2">
-            <Icon icon="ph:user-circle" class="w-8 h-8 text-gray-600 dark:text-gray-400" />
-            <span class="text-sm text-gray-700 dark:text-gray-300">{{ authStore.username }}</span>
-          </div>
-          <button
-            @click="authStore.logout"
-            class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-          >
-            退出
-          </button>
         </div>
 
         <nav class="space-y-1">
@@ -77,7 +83,7 @@
     </aside>
 
     <!-- 主内容区 -->
-    <main class="ml-72 p-8">
+    <main class="ml-72 pt-20 p-8">
       <!-- 添加新任务 -->
       <div class="max-w-3xl mx-auto mb-8">
         <form @submit.prevent="handleAddTodo" class="relative">

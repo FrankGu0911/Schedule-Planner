@@ -7,24 +7,48 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onBeforeMount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useThemeStore } from './stores/theme'
+import { useTodoStore } from './stores/todo'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const todoStore = useTodoStore()
 
-onMounted(async () => {
+onBeforeMount(async () => {
   // 初始化主题
   themeStore.initTheme()
   
-  // 验证 token
-  if (authStore.token) {
-    const isValid = await authStore.verifyToken()
-    if (!isValid && router.currentRoute.value.meta.requiresAuth) {
-      router.push('/login')
+  // 恢复用户状态
+  const token = localStorage.getItem('token')
+  const userStr = localStorage.getItem('user')
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr)
+      authStore.token = token
+      authStore.user = user
+      
+      // 如果当前路由需要认证，验证token并加载任务数据
+      if (router.currentRoute.value.meta.requiresAuth) {
+        const isValid = await authStore.verifyToken()
+        if (!isValid) {
+          authStore.clearAuth()
+          router.push('/login')
+        } else {
+          // Token 验证成功后加载任务数据
+          await todoStore.fetchTodos()
+        }
+      }
+    } catch (error) {
+      console.error('Failed to restore user state:', error)
+      authStore.clearAuth()
+      if (router.currentRoute.value.meta.requiresAuth) {
+        router.push('/login')
+      }
     }
   } else if (router.currentRoute.value.meta.requiresAuth) {
     router.push('/login')

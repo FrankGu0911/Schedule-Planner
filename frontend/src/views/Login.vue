@@ -1,20 +1,6 @@
 <template>
   <div class="min-h-screen flex bg-gray-50 dark:bg-gray-900">
-    <!-- 左侧装饰区域 -->
-    <div class="hidden lg:flex lg:w-1/2 bg-primary-600 relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-primary-500 to-primary-700"></div>
-      <div class="relative z-10 flex flex-col justify-center items-center text-white p-12">
-        <img src="/ms-todo-logo.webp" alt="Logo" class="w-16 h-16 mb-8" />
-        <h1 class="text-4xl font-bold mb-4">Microsoft To Do</h1>
-        <p class="text-lg text-primary-100 text-center max-w-md">
-          专注于重要事项，按时完成任务，让生活更有条理
-        </p>
-      </div>
-      <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-primary-700 to-transparent"></div>
-    </div>
-
-    <!-- 右侧登录区域 -->
-    <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+    <div class="w-full flex items-center justify-center p-8">
       <div class="w-full max-w-md">
         <!-- 主题切换按钮 -->
         <button
@@ -29,7 +15,6 @@
 
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 space-y-6">
           <div class="text-center">
-            <img src="/ms-todo-logo.webp" alt="Logo" class="w-12 h-12 mx-auto mb-4 lg:hidden" />
             <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">欢迎回来</h2>
             <p class="mt-2 text-gray-600 dark:text-gray-400">请登录您的账户</p>
           </div>

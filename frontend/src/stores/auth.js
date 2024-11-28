@@ -44,13 +44,13 @@ api.interceptors.response.use(
 const API_ENDPOINTS = {
   LOGIN: '/api/v1/auth/login',
   REGISTER: '/api/v1/auth/register',
-  VERIFY: '/api/v1/auth/verify'  // 假设有这个验证端点
+  VERIFY: '/api/v1/auth/verify'
 }
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: localStorage.getItem('token'),
+    token: null,
     loading: false,
     error: null
   }),
@@ -67,17 +67,26 @@ export const useAuthStore = defineStore('auth', {
       }
 
       try {
-        // 尝试获取用户信息来验证 token
         const response = await api.get(API_ENDPOINTS.VERIFY)
-        this.user = response.data.user
-        return true
+        if (response.data && response.data.user) {
+          this.user = response.data.user
+          localStorage.setItem('user', JSON.stringify(response.data.user))
+          return true
+        }
+        this.clearAuth()
+        return false
       } catch (error) {
         console.error('Token verification failed:', error)
-        this.token = null
-        this.user = null
-        localStorage.removeItem('token')
+        this.clearAuth()
         return false
       }
+    },
+
+    clearAuth() {
+      this.token = null
+      this.user = null
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
     },
 
     async login(username, password) {
@@ -89,27 +98,26 @@ export const useAuthStore = defineStore('auth', {
           password
         })
         
-        if (response.data.token) {
+        if (response.data && response.data.token) {
           this.token = response.data.token
-          this.user = response.data.user
+          this.user = response.data.user || { username }
           localStorage.setItem('token', response.data.token)
+          localStorage.setItem('user', JSON.stringify(this.user))
           router.push('/')
-        } else {
-          throw new Error('登录响应中没有token')
+          return true
         }
+        throw new Error('登录失败')
       } catch (error) {
         console.error('Login error:', error)
+        this.clearAuth()
         if (error.response) {
-          // 服务器响应的错误
-          this.error = error.response.data.error || '登录失败'
+          this.error = error.response.data?.message || '登录失败'
         } else if (error.request) {
-          // 请求发出但没有收到响应
           this.error = '无法连接到服务器，请检查网络连接'
         } else {
-          // 其他错误
           this.error = error.message || '登录过程中发生错误'
         }
-        throw error
+        return false
       } finally {
         this.loading = false
       }
@@ -119,7 +127,6 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       this.error = null
       try {
-        // 添加基本的验证
         if (!username || username.length < 3) {
           throw new Error('用户名至少需要3个字符')
         }
@@ -132,36 +139,33 @@ export const useAuthStore = defineStore('auth', {
           password
         })
         
-        if (response.data.token) {
+        if (response.data && response.data.token) {
           this.token = response.data.token
-          this.user = response.data.user
+          this.user = response.data.user || { username }
           localStorage.setItem('token', response.data.token)
+          localStorage.setItem('user', JSON.stringify(this.user))
           router.push('/')
-        } else {
-          throw new Error('注册响应中没有token')
+          return true
         }
+        throw new Error('注册失败')
       } catch (error) {
         console.error('Registration error:', error)
+        this.clearAuth()
         if (error.response) {
-          // 服务器响应的错误
-          this.error = error.response.data.error || '注册失败'
+          this.error = error.response.data?.message || '注册失败'
         } else if (error.request) {
-          // 请求发出但没有收到响应
           this.error = '无法连接到服务器，请检查网络连接'
         } else {
-          // 其他错误
           this.error = error.message || '注册过程中发生错误'
         }
-        throw error
+        return false
       } finally {
         this.loading = false
       }
     },
 
     logout() {
-      this.token = null
-      this.user = null
-      localStorage.removeItem('token')
+      this.clearAuth()
       router.push('/login')
     },
 
