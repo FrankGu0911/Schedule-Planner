@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"todolist/database"
 	"todolist/models"
+	"time"
 )
 
 // CreateTodo 创建待办事项
@@ -20,6 +21,9 @@ func CreateTodo(c *gin.Context) {
 		Title:       request.Title,
 		Description: request.Description,
 		UserID:      userID.(uint),
+		StartTime:   request.StartTime,
+		EndTime:     request.EndTime,
+		Tags:        request.Tags,
 	}
 
 	if err := database.DB.Create(&todo).Error; err != nil {
@@ -34,7 +38,29 @@ func CreateTodo(c *gin.Context) {
 func GetTodos(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	var todos []models.Todo
-	if err := database.DB.Where("user_id = ?", userID).Find(&todos).Error; err != nil {
+	
+	// 构建查询
+	query := database.DB.Where("user_id = ?", userID)
+	
+	// 标签筛选
+	if tag := c.Query("tag"); tag != "" {
+		query = query.Where("JSON_CONTAINS(tags, ?)", tag)
+	}
+	
+	// 时间范围筛选
+	if startTime := c.Query("start_time"); startTime != "" {
+		if t, err := time.Parse(time.RFC3339, startTime); err == nil {
+			query = query.Where("start_time >= ?", t)
+		}
+	}
+	
+	if endTime := c.Query("end_time"); endTime != "" {
+		if t, err := time.Parse(time.RFC3339, endTime); err == nil {
+			query = query.Where("end_time <= ?", t)
+		}
+	}
+
+	if err := query.Find(&todos).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取待办事项失败"})
 		return
 	}
@@ -78,6 +104,9 @@ func UpdateTodo(c *gin.Context) {
 	}
 	todo.Description = request.Description
 	todo.Completed = request.Completed
+	todo.StartTime = request.StartTime
+	todo.EndTime = request.EndTime
+	todo.Tags = request.Tags
 
 	if err := database.DB.Save(&todo).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新待办事项失败"})

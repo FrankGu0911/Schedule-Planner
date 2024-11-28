@@ -1,4 +1,27 @@
-# Logs
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+
+# 测试覆盖率
+coverage
+
+# 构建输出
+dist
+dist-ssr
+*.local
+
+# 编辑器目录和文件
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 日志
 logs
 *.log
 npm-debug.log*
@@ -7,18 +30,23 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# 环境变量
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# 测试相关
+__tests__/__snapshots__/
+/coverage
+.nyc_output
+
+# 缓存文件
+.cache/
+.temp/
+
+# 包管理器锁定文件（根据项目需求决定是否忽略）
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
