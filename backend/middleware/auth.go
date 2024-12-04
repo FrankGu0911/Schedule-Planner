@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"todolist/database"
+	"todolist/models"
 )
 
 var JWTSecret = []byte("your_jwt_secret_key")
@@ -55,7 +57,23 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// 从数据库获取完整的用户信息
+		var user models.User
+		if err := database.DB.First(&user, claims.UserID).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
+			c.Abort()
+			return
+		}
+
+		// 检查用户状态
+		if !user.IsActive() {
+			c.JSON(http.StatusForbidden, gin.H{"error": "账号未激活或已被禁用"})
+			c.Abort()
+			return
+		}
+
 		c.Set("userID", claims.UserID)
+		c.Set("user", &user)
 		c.Next()
 	}
 } 

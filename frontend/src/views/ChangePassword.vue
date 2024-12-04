@@ -15,42 +15,42 @@
 
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 space-y-6">
           <div class="text-center">
-            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">创建账户</h2>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">开始您的待办事项之旅</p>
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">修改密码</h2>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">请输入您的旧密码和新密码</p>
           </div>
 
           <form @submit.prevent="handleSubmit" class="space-y-5">
             <div>
-              <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                用户名
+              <label for="oldPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                旧密码
               </label>
               <input
-                id="username"
-                v-model="username"
-                type="text"
+                id="oldPassword"
+                v-model="oldPassword"
+                type="password"
                 required
                 class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                placeholder="请输入用户名"
+                placeholder="请输入旧密码"
               />
             </div>
 
             <div>
-              <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                密码
+              <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                新密码
               </label>
               <input
-                id="password"
-                v-model="password"
+                id="newPassword"
+                v-model="newPassword"
                 type="password"
                 required
                 class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                placeholder="请输入密码"
+                placeholder="请输入新密码"
               />
             </div>
 
             <div>
               <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                确认密码
+                确认新密码
               </label>
               <input
                 id="confirmPassword"
@@ -58,12 +58,16 @@
                 type="password"
                 required
                 class="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
-                placeholder="请再次输入密码"
+                placeholder="请再次输入新密码"
               />
             </div>
 
-            <div v-if="error || authStore.error" class="text-red-500 text-sm text-center">
-              {{ error || authStore.error }}
+            <div v-if="error" class="text-red-500 text-sm text-center">
+              {{ error }}
+            </div>
+
+            <div v-if="authStore.error" class="text-red-500 text-sm text-center">
+              {{ authStore.error }}
             </div>
 
             <div v-if="authStore.message" class="text-green-500 text-sm text-center">
@@ -80,21 +84,17 @@
                 icon="ph:circle-notch-bold"
                 class="w-5 h-5 mr-2 animate-spin"
               />
-              <span>{{ authStore.loading ? '注册中...' : '注册' }}</span>
+              <span>{{ authStore.loading ? '修改中...' : '修改密码' }}</span>
+            </button>
+
+            <button
+              type="button"
+              @click="router.back()"
+              class="w-full flex justify-center items-center h-11 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              返回
             </button>
           </form>
-
-          <div class="text-center space-y-2">
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              注册后需要等待管理员审核激活账号
-            </p>
-            <router-link
-              to="/login"
-              class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-            >
-              已有账户？立即登录
-            </router-link>
-          </div>
         </div>
       </div>
     </div>
@@ -104,28 +104,37 @@
 <script setup>
 import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
-const username = ref('')
-const password = ref('')
+
+const oldPassword = ref('')
+const newPassword = ref('')
 const confirmPassword = ref('')
 const error = ref('')
 
 const handleSubmit = async () => {
   error.value = ''
   
-  if (password.value !== confirmPassword.value) {
-    error.value = '两次输入的密码不一致'
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = '两次输入的新密码不一致'
     return
   }
 
   try {
-    await authStore.register(username.value, password.value)
+    const success = await authStore.changePassword(oldPassword.value, newPassword.value)
+    if (success) {
+      // 等待一会儿显示成功消息，然后返回
+      setTimeout(() => {
+        router.back()
+      }, 1500)
+    }
   } catch (err) {
-    console.error('Registration failed:', err)
+    console.error('Change password failed:', err)
   }
 }
 </script> 

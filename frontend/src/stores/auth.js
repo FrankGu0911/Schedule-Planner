@@ -44,7 +44,7 @@ api.interceptors.response.use(
 const API_ENDPOINTS = {
   LOGIN: '/api/v1/auth/login',
   REGISTER: '/api/v1/auth/register',
-  VERIFY: '/api/v1/auth/verify'
+  CHANGE_PASSWORD: '/api/v1/auth/password'
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -52,12 +52,15 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: null,
     loading: false,
-    error: null
+    error: null,
+    message: null
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.token && !!state.user,
-    username: (state) => state.user?.username
+    username: (state) => state.user?.username,
+    isAdmin: (state) => state.user?.role === 'admin',
+    userStatus: (state) => state.user?.status || 'inactive'
   },
 
   actions: {
@@ -92,26 +95,39 @@ export const useAuthStore = defineStore('auth', {
     async login(username, password) {
       this.loading = true
       this.error = null
+      this.message = null
       try {
         const response = await api.post(API_ENDPOINTS.LOGIN, {
           username,
           password
         })
         
-        if (response.data && response.data.token) {
-          this.token = response.data.token
-          this.user = response.data.user || { username }
-          localStorage.setItem('token', response.data.token)
-          localStorage.setItem('user', JSON.stringify(this.user))
+        if (response.data?.token && response.data?.user) {
+          const { token, user } = response.data
+          this.token = token
+          this.user = user
+          localStorage.setItem('token', token)
+          localStorage.setItem('user', JSON.stringify(user))
+          
+          if (user.status !== 'active') {
+            this.error = '账号未激活，请等待管理员审核'
+            this.clearAuth()
+            return false
+          }
+          
           router.push('/')
           return true
         }
-        throw new Error('登录失败')
+        throw new Error(response.data?.error || '登录失败')
       } catch (error) {
         console.error('Login error:', error)
         this.clearAuth()
-        if (error.response) {
-          this.error = error.response.data?.message || '登录失败'
+        if (error.response?.data?.error) {
+          this.error = error.response.data.error
+        } else if (error.response?.status === 401) {
+          this.error = '用户名或密码错误'
+        } else if (error.response?.status === 403) {
+          this.error = '账号未激活，请等待管理员审核'
         } else if (error.request) {
           this.error = '无法连接到服务器，请检查网络连接'
         } else {
@@ -126,6 +142,7 @@ export const useAuthStore = defineStore('auth', {
     async register(username, password) {
       this.loading = true
       this.error = null
+      this.message = null
       try {
         if (!username || username.length < 3) {
           throw new Error('用户名至少需要3个字符')
@@ -139,24 +156,52 @@ export const useAuthStore = defineStore('auth', {
           password
         })
         
-        if (response.data && response.data.token) {
-          this.token = response.data.token
-          this.user = response.data.user || { username }
-          localStorage.setItem('token', response.data.token)
-          localStorage.setItem('user', JSON.stringify(this.user))
-          router.push('/')
+        if (response.data?.user) {
+          this.message = response.data.message || '注册成功，请等待管理员审核'
+          router.push('/login')
           return true
         }
-        throw new Error('注册失败')
+        throw new Error(response.data?.error || '注册失败')
       } catch (error) {
         console.error('Registration error:', error)
-        this.clearAuth()
-        if (error.response) {
-          this.error = error.response.data?.message || '注册失败'
+        if (error.response?.data?.error) {
+          this.error = error.response.data.error
         } else if (error.request) {
           this.error = '无法连接到服务器，请检查网络连接'
         } else {
           this.error = error.message || '注册过程中发生错误'
+        }
+        return false
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async changePassword(oldPassword, newPassword) {
+      this.loading = true
+      this.error = null
+      try {
+        if (!newPassword || newPassword.length < 6) {
+          throw new Error('新密码至少需要6个字符')
+        }
+
+        const response = await api.put(API_ENDPOINTS.CHANGE_PASSWORD, {
+          old_password: oldPassword,
+          new_password: newPassword
+        })
+        
+        if (response.data?.message) {
+          return true
+        }
+        throw new Error(response.data?.error || '修改密码失败')
+      } catch (error) {
+        console.error('Change password error:', error)
+        if (error.response?.data?.error) {
+          this.error = error.response.data.error
+        } else if (error.request) {
+          this.error = '无法连接到服务器，请检查网络连接'
+        } else {
+          this.error = error.message || '修改密码过程中发生错误'
         }
         return false
       } finally {
@@ -171,6 +216,7 @@ export const useAuthStore = defineStore('auth', {
 
     clearError() {
       this.error = null
+      this.message = null
     }
   }
 }) 

@@ -29,19 +29,22 @@ onBeforeMount(async () => {
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr)
+      
+      // 如果用户状态不是active，清除认证信息并跳转到登录页
+      if (user.status !== 'active') {
+        authStore.clearAuth()
+        if (router.currentRoute.value.meta.requiresAuth) {
+          router.push('/login')
+        }
+        return
+      }
+      
       authStore.token = token
       authStore.user = user
       
-      // 如果当前路由需要认证，验证token并加载任务数据
+      // 如果当前路由需要认证，加载任务数据
       if (router.currentRoute.value.meta.requiresAuth) {
-        const isValid = await authStore.verifyToken()
-        if (!isValid) {
-          authStore.clearAuth()
-          router.push('/login')
-        } else {
-          // Token 验证成功后加载任务数据
-          await todoStore.fetchTodos()
-        }
+        await todoStore.fetchTodos()
       }
     } catch (error) {
       console.error('Failed to restore user state:', error)

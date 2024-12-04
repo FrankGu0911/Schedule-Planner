@@ -12,6 +12,11 @@ func main() {
 	// 初始化数据库
 	database.InitDB()
 
+	// 创建默认管理员账号
+	if err := database.CreateDefaultAdmin(); err != nil {
+		panic(err)
+	}
+
 	// 创建 Gin 引擎
 	r := gin.Default()
 
@@ -45,6 +50,18 @@ func main() {
 		{
 			auth.POST("/register", handlers.Register)
 			auth.POST("/login", handlers.Login)
+			auth.PUT("/password", middleware.AuthMiddleware(), handlers.UpdatePassword)
+		}
+
+		// 管理员路由（需要认证和管理员权限）
+		admin := v1.Group("/admin")
+		admin.Use(middleware.AuthMiddleware())
+		{
+			admin.GET("/users", handlers.GetUsers)
+			admin.POST("/users/:id/activate", handlers.ActivateUser)
+			admin.POST("/users/:id/block", handlers.BlockUser)
+			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
+			admin.PUT("/users/:id/password", handlers.AdminUpdateUserPassword)
 		}
 
 		// Todo相关路由（需要认证）

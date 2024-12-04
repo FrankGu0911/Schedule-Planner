@@ -17,16 +17,10 @@ func CreateTodo(c *gin.Context) {
 		return
 	}
 
-	todo := models.Todo{
-		Title:       request.Title,
-		Description: request.Description,
-		UserID:      userID.(uint),
-		StartTime:   request.StartTime,
-		EndTime:     request.EndTime,
-		Tags:        request.Tags,
-	}
+	// 使用新的转换方法创建todo
+	todo := request.ToTodo(userID.(uint))
 
-	if err := database.DB.Create(&todo).Error; err != nil {
+	if err := database.DB.Create(todo).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建待办事项失败"})
 		return
 	}
@@ -49,15 +43,20 @@ func GetTodos(c *gin.Context) {
 	
 	// 时间范围筛选
 	if startTime := c.Query("start_time"); startTime != "" {
-		if t, err := time.Parse(time.RFC3339, startTime); err == nil {
+		if t, err := time.Parse(models.TimeFormat, startTime); err == nil {
 			query = query.Where("start_time >= ?", t)
 		}
 	}
 	
 	if endTime := c.Query("end_time"); endTime != "" {
-		if t, err := time.Parse(time.RFC3339, endTime); err == nil {
+		if t, err := time.Parse(models.TimeFormat, endTime); err == nil {
 			query = query.Where("end_time <= ?", t)
 		}
+	}
+
+	// 长期任务筛选
+	if isLongTerm := c.Query("is_long_term"); isLongTerm != "" {
+		query = query.Where("is_long_term = ?", isLongTerm == "true")
 	}
 
 	if err := query.Find(&todos).Error; err != nil {
@@ -99,14 +98,8 @@ func UpdateTodo(c *gin.Context) {
 		return
 	}
 
-	if request.Title != "" {
-		todo.Title = request.Title
-	}
-	todo.Description = request.Description
-	todo.Completed = request.Completed
-	todo.StartTime = request.StartTime
-	todo.EndTime = request.EndTime
-	todo.Tags = request.Tags
+	// 使用新的更新方法
+	request.UpdateTodo(&todo)
 
 	if err := database.DB.Save(&todo).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新待办事项失败"})

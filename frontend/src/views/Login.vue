@@ -52,6 +52,10 @@
               {{ authStore.error }}
             </div>
 
+            <div v-if="authStore.message" class="text-green-500 text-sm text-center">
+              {{ authStore.message }}
+            </div>
+
             <button
               type="submit"
               :disabled="authStore.loading"
@@ -66,7 +70,7 @@
             </button>
           </form>
 
-          <div class="text-center">
+          <div class="text-center space-y-2">
             <router-link
               to="/register"
               class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
