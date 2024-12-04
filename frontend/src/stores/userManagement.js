@@ -31,7 +31,7 @@ const API_ENDPOINTS = {
   ACTIVATE_USER: (id) => `/api/v1/admin/users/${id}/activate`,
   BLOCK_USER: (id) => `/api/v1/admin/users/${id}/block`,
   CHANGE_ROLE: (id) => `/api/v1/admin/users/${id}/role`,
-  RESET_PASSWORD: (id) => `/api/v1/admin/users/${id}/password`
+  CHANGE_PASSWORD: (id) => `/api/v1/admin/users/${id}/password`
 }
 
 export const useUserManagementStore = defineStore('userManagement', {
@@ -119,19 +119,16 @@ export const useUserManagementStore = defineStore('userManagement', {
       }
     },
 
-    async resetPassword(userId) {
+    async changePassword(userId, newPassword) {
       this.loading = true
       this.error = null
       try {
-        const response = await api.put(API_ENDPOINTS.RESET_PASSWORD(userId), {
-          password: '123456' // 默认密码
+        await api.put(API_ENDPOINTS.CHANGE_PASSWORD(userId), {
+          password: newPassword
         })
-        if (response.data?.message) {
-          alert('密码已重置为：123456')
-        }
       } catch (error) {
-        console.error('Reset password error:', error)
-        this.error = error.response?.data?.error || '重置密码失败'
+        console.error('Change password error:', error)
+        this.error = error.response?.data?.error || '修改密码失败'
       } finally {
         this.loading = false
       }

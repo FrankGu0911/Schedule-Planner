@@ -76,55 +76,21 @@
 
         <!-- 侧边栏导航 -->
         <nav class="space-y-1">
-          <!-- 待办事项菜单组 -->
-          <div>
-            <button
-              @click="todoExpanded = !todoExpanded"
-              class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors"
-              :class="[$route.path === '/' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700']"
-            >
-              <div class="flex items-center space-x-3">
-                <Icon icon="ph:list-bold" class="w-5 h-5" />
-                <span>待办事项</span>
-              </div>
-              <Icon
-                :icon="todoExpanded ? 'ph:caret-up-bold' : 'ph:caret-down-bold'"
-                class="w-4 h-4"
-              />
-            </button>
-
-            <!-- 子菜单 -->
-            <div
-              v-show="todoExpanded"
-              class="mt-1 ml-4 space-y-1"
-            >
-              <button
-                v-for="filter in filters"
-                :key="filter.value"
-                @click="todoStore.setFilter(filter.value)"
-                :class="[
-                  'w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors',
-                  todoStore.filter === filter.value
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                ]"
-              >
-                <Icon :icon="filter.icon" class="w-5 h-5" />
-                <span>{{ filter.label }}</span>
-                <span class="ml-auto text-sm text-gray-500 dark:text-gray-400">
-                  {{ filter.value === 'all' ? todoStore.completionStats.total : 
-                     filter.value === 'active' ? todoStore.completionStats.active :
-                     todoStore.completionStats.completed }}
-                </span>
-              </button>
-            </div>
-          </div>
+          <!-- 待办事项 -->
+          <router-link
+            to="/"
+            class="flex items-center space-x-3 px-3 py-2 rounded-lg text-left"
+            :class="[$route.path === '/' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700']"
+          >
+            <Icon icon="ph:list-bold" class="w-5 h-5" />
+            <span>待办事项</span>
+          </router-link>
 
           <!-- 用户管理（仅管理员可见） -->
           <router-link
             v-if="authStore.isAdmin"
             to="/user-management"
-            class="flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors"
+            class="flex items-center space-x-3 px-3 py-2 rounded-lg text-left"
             :class="[$route.path === '/user-management' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700']"
           >
             <Icon icon="ph:users-bold" class="w-5 h-5" />
@@ -142,7 +108,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useAuthStore } from '../stores/auth'
@@ -153,14 +119,6 @@ const route = useRoute()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const todoStore = useTodoStore()
-
-const todoExpanded = ref(true)
-
-const filters = [
-  { label: '所有任务', value: 'all', icon: 'ph:list-bold' },
-  { label: '进行中', value: 'active', icon: 'ph:clock-bold' },
-  { label: '已完成', value: 'completed', icon: 'ph:check-circle-bold' }
-]
 
 // 根据路由计算页面标题
 const title = computed(() => {

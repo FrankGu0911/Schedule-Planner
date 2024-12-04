@@ -135,20 +135,30 @@
                   @click="changeRole(user.id, user.role === 'admin' ? 'user' : 'admin')"
                   class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm"
                 >
-                  {{ user.role === 'admin' ? '降为用户' : '设为管理员' }}
+                  {{ user.role === 'admin' ? '设为用户' : '设为管理员' }}
                 </button>
 
                 <button
-                  @click="resetPassword(user.id)"
+                  @click="openPasswordDialog(user.id)"
                   class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm"
                 >
-                  重置密码
+                  修改密码
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- 密码修改对话框 -->
+      <PasswordDialog
+        v-model:show="showPasswordDialog"
+        :is-admin="true"
+        :loading="userManagementStore.loading"
+        :error="userManagementStore.error"
+        @submit="handlePasswordSubmit"
+        @cancel="handlePasswordCancel"
+      />
     </div>
   </MainLayout>
 </template>
@@ -157,10 +167,15 @@
 import { ref, computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useUserManagementStore } from '../stores/userManagement'
+import { useToastStore } from '../stores/toast'
 import { format } from 'date-fns'
 import MainLayout from '../components/MainLayout.vue'
+import PasswordDialog from '../components/PasswordDialog.vue'
 
 const userManagementStore = useUserManagementStore()
+const toastStore = useToastStore()
+const showPasswordDialog = ref(false)
+const selectedUserId = ref(null)
 
 const statusFilter = ref('')
 const roleFilter = ref('')
@@ -218,9 +233,29 @@ const changeRole = async (userId, newRole) => {
   await userManagementStore.changeRole(userId, newRole)
 }
 
-const resetPassword = async (userId) => {
-  if (confirm('确定要重置该用户的密码吗？')) {
-    await userManagementStore.resetPassword(userId)
+const openPasswordDialog = (userId) => {
+  selectedUserId.value = userId
+  showPasswordDialog.value = true
+  userManagementStore.error = null
+}
+
+const handlePasswordSubmit = async ({ newPassword, error }) => {
+  if (error) {
+    userManagementStore.error = error
+    return
   }
+
+  await userManagementStore.changePassword(selectedUserId.value, newPassword)
+  if (!userManagementStore.error) {
+    showPasswordDialog.value = false
+    selectedUserId.value = null
+    toastStore.success('密码修改成功')
+  }
+}
+
+const handlePasswordCancel = () => {
+  showPasswordDialog.value = false
+  selectedUserId.value = null
+  userManagementStore.error = null
 }
 </script> 

@@ -3,7 +3,7 @@
     <!-- 主内容区 -->
     <div class="max-w-3xl mx-auto">
       <!-- 添加新任务 -->
-      <div class="mb-8">
+      <div class="mb-6">
         <form @submit.prevent="handleAddTodo" class="relative">
           <input
             v-model="newTodo"
@@ -16,6 +16,34 @@
             class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
           />
         </form>
+      </div>
+
+      <!-- 筛选器 -->
+      <div class="mb-6 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm text-gray-600 dark:text-gray-400">状态：</span>
+          <select
+            v-model="todoStore.filter"
+            class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+          >
+            <option value="all">全部</option>
+            <option value="active">进行中</option>
+            <option value="completed">已完成</option>
+          </select>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="flex items-center space-x-4 text-sm">
+          <span class="text-gray-600 dark:text-gray-400">
+            总计: {{ todoStore.completionStats.total }}
+          </span>
+          <span class="text-green-600 dark:text-green-400">
+            已完成: {{ todoStore.completionStats.completed }}
+          </span>
+          <span class="text-blue-600 dark:text-blue-400">
+            进行中: {{ todoStore.completionStats.active }}
+          </span>
+        </div>
       </div>
 
       <!-- 任务列表 -->
@@ -81,17 +109,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useTodoStore } from '../stores/todo'
 import MainLayout from '../components/MainLayout.vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const todoStore = useTodoStore()
 const newTodo = ref('')
 
+onMounted(() => {
+  const userId = route.query.userId
+  if (userId) {
+    todoStore.fetchUserTodos(userId)
+  } else {
+    todoStore.fetchTodos()
+  }
+})
+
 const handleAddTodo = async () => {
   if (newTodo.value.trim()) {
-    await todoStore.addTodo(newTodo.value.trim())
+    const userId = route.query.userId
+    await todoStore.addTodo(newTodo.value.trim(), userId)
     newTodo.value = ''
   }
 }

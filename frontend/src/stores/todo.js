@@ -27,7 +27,8 @@ api.interceptors.request.use(
 
 // API 端点
 const API_ENDPOINTS = {
-  TODOS: '/api/v1/todos'
+  TODOS: '/api/v1/todos',
+  USER_TODOS: '/api/v1/users'
 }
 
 export const useTodoStore = defineStore('todo', {
@@ -35,7 +36,8 @@ export const useTodoStore = defineStore('todo', {
     todos: [],
     filter: 'all', // 'all' | 'active' | 'completed'
     loading: false,
-    error: null
+    error: null,
+    currentUserId: null
   }),
 
   getters: {
@@ -68,6 +70,7 @@ export const useTodoStore = defineStore('todo', {
       try {
         const response = await api.get(API_ENDPOINTS.TODOS)
         this.todos = response.data
+        this.currentUserId = null
       } catch (error) {
         console.error('Fetch todos error:', error)
         this.error = error.response?.data?.error || '获取待办事项失败'
@@ -76,11 +79,28 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    async addTodo(title, description = '') {
+    async fetchUserTodos(userId) {
+      this.loading = true
       try {
-        const response = await api.post(API_ENDPOINTS.TODOS, { 
+        const response = await api.get(`${API_ENDPOINTS.USER_TODOS}/${userId}/todos`)
+        this.todos = response.data
+        this.currentUserId = userId
+      } catch (error) {
+        console.error('Fetch user todos error:', error)
+        this.error = error.response?.data?.error || '获取用户待办事项失败'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async addTodo(title, userId = null) {
+      try {
+        const endpoint = userId 
+          ? `${API_ENDPOINTS.USER_TODOS}/${userId}/todos`
+          : API_ENDPOINTS.TODOS
+        
+        const response = await api.post(endpoint, { 
           title,
-          description,
           completed: false
         })
         this.todos.push(response.data)
@@ -95,9 +115,12 @@ export const useTodoStore = defineStore('todo', {
       if (!todo) return
 
       try {
-        const response = await api.put(`${API_ENDPOINTS.TODOS}/${id}`, {
+        const endpoint = this.currentUserId
+          ? `${API_ENDPOINTS.USER_TODOS}/${this.currentUserId}/todos/${id}`
+          : `${API_ENDPOINTS.TODOS}/${id}`
+
+        const response = await api.put(endpoint, {
           title: todo.title,
-          description: todo.description,
           completed: !todo.completed
         })
         const index = this.todos.findIndex(t => t.id === id)
@@ -108,9 +131,34 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
+    async updateTodo(id, title) {
+      const todo = this.todos.find(t => t.id === id)
+      if (!todo) return
+
+      try {
+        const endpoint = this.currentUserId
+          ? `${API_ENDPOINTS.USER_TODOS}/${this.currentUserId}/todos/${id}`
+          : `${API_ENDPOINTS.TODOS}/${id}`
+
+        const response = await api.put(endpoint, {
+          title,
+          completed: todo.completed
+        })
+        const index = this.todos.findIndex(t => t.id === id)
+        this.todos[index] = response.data
+      } catch (error) {
+        console.error('Update todo error:', error)
+        this.error = error.response?.data?.error || '更新待办事项失败'
+      }
+    },
+
     async deleteTodo(id) {
       try {
-        await api.delete(`${API_ENDPOINTS.TODOS}/${id}`)
+        const endpoint = this.currentUserId
+          ? `${API_ENDPOINTS.USER_TODOS}/${this.currentUserId}/todos/${id}`
+          : `${API_ENDPOINTS.TODOS}/${id}`
+
+        await api.delete(endpoint)
         this.todos = this.todos.filter(todo => todo.id !== id)
       } catch (error) {
         console.error('Delete todo error:', error)
