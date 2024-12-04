@@ -1,21 +1,28 @@
 <template>
   <MainLayout>
-    <!-- 主内容区 -->
     <div class="max-w-3xl mx-auto">
-      <!-- 添加新任务 -->
+      <!-- 添加任务按钮 -->
       <div class="mb-6">
-        <form @submit.prevent="handleAddTodo" class="relative">
-          <input
-            v-model="newTodo"
-            type="text"
-            placeholder="添加任务"
-            class="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          <Icon
-            icon="ph:plus-circle"
-            class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-          />
-        </form>
+        <button
+          v-if="!showTaskEditor"
+          @click="showTaskEditor = true"
+          class="w-full flex items-center justify-center px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors"
+        >
+          <Icon icon="ph:plus-circle" class="w-5 h-5 mr-2 text-gray-400" />
+          <span class="text-gray-600 dark:text-gray-400">添加任务</span>
+        </button>
+
+        <!-- 任务编辑器 -->
+        <TaskEditor
+          v-else
+          :task="editingTodo"
+          :loading="todoStore.loading"
+          @submit="handleTaskSubmit"
+          @cancel="() => {
+            showTaskEditor = false
+            editingTodo = null
+          }"
+        />
       </div>
 
       <!-- 筛选器 -->
@@ -50,43 +57,16 @@
       <TransitionGroup
         name="list"
         tag="div"
-        class="space-y-2"
+        class="space-y-4"
       >
-        <div
+        <TodoItem
           v-for="todo in todoStore.filteredTodos"
           :key="todo.id"
-          class="group bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div class="p-4 flex items-center space-x-4">
-            <button
-              @click="todoStore.toggleTodo(todo.id)"
-              class="flex-shrink-0 w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
-              :class="{ 'bg-primary-500 border-primary-500': todo.completed }"
-            >
-              <Icon
-                v-if="todo.completed"
-                icon="ph:check-bold"
-                class="w-4 h-4 text-white"
-              />
-            </button>
-            
-            <div class="flex-grow">
-              <input
-                v-model="todo.title"
-                @blur="todoStore.updateTodo(todo.id, todo.title)"
-                class="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-gray-900 dark:text-white"
-                :class="{ 'line-through text-gray-500 dark:text-gray-400': todo.completed }"
-              />
-            </div>
-            
-            <button
-              @click="todoStore.deleteTodo(todo.id)"
-              class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded transition-opacity duration-200"
-            >
-              <Icon icon="ph:trash-bold" class="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+          :todo="todo"
+          @toggle="todoStore.toggleTodo(todo.id)"
+          @edit="handleEditTodo(todo)"
+          @delete="todoStore.deleteTodo(todo.id)"
+        />
 
         <!-- 空状态 -->
         <div
@@ -113,11 +93,14 @@ import { ref, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useTodoStore } from '../stores/todo'
 import MainLayout from '../components/MainLayout.vue'
+import TaskEditor from '../components/TaskEditor.vue'
+import TodoItem from '../components/TodoItem.vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const todoStore = useTodoStore()
-const newTodo = ref('')
+const showTaskEditor = ref(false)
+const editingTodo = ref(null)
 
 onMounted(() => {
   const userId = route.query.userId
@@ -128,12 +111,20 @@ onMounted(() => {
   }
 })
 
-const handleAddTodo = async () => {
-  if (newTodo.value.trim()) {
-    const userId = route.query.userId
-    await todoStore.addTodo(newTodo.value.trim(), userId)
-    newTodo.value = ''
+const handleTaskSubmit = async (taskData) => {
+  const userId = route.query.userId
+  if (editingTodo.value) {
+    await todoStore.updateTodo(editingTodo.value.id, taskData)
+    editingTodo.value = null
+  } else {
+    await todoStore.addTodo(taskData, userId)
   }
+  showTaskEditor.value = false
+}
+
+const handleEditTodo = (todo) => {
+  editingTodo.value = todo
+  showTaskEditor.value = true
 }
 </script>
 

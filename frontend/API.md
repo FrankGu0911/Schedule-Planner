@@ -296,7 +296,7 @@ Authorization: Bearer {token}
     "description": "string",        // 可选
     "is_long_term": false,         // 可选，默认为false
     "start_time": "2024-01-01 08:00:00",  // 可选，默认为当前时间
-    "end_time": "2024-01-02 18:00:00",    // 可选，默认为开始时间后24小时
+    "end_time": "2024-01-02 18:00:00",    // 可选，默认为空
     "tags": ["工作", "学习"]       // 可选
 }
 ```

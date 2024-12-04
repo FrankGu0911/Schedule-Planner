@@ -93,15 +93,19 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    async addTodo(title, userId = null) {
+    async addTodo(taskData, userId = null) {
       try {
         const endpoint = userId 
           ? `${API_ENDPOINTS.USER_TODOS}/${userId}/todos`
           : API_ENDPOINTS.TODOS
         
         const response = await api.post(endpoint, { 
-          title,
-          completed: false
+          title: taskData.title,
+          description: taskData.description || '',
+          is_long_term: taskData.is_long_term,
+          start_time: taskData.start_time,
+          end_time: taskData.end_time,
+          tags: taskData.tags
         })
         this.todos.push(response.data)
       } catch (error) {
@@ -131,7 +135,7 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    async updateTodo(id, title) {
+    async updateTodo(id, taskData) {
       const todo = this.todos.find(t => t.id === id)
       if (!todo) return
 
@@ -141,8 +145,13 @@ export const useTodoStore = defineStore('todo', {
           : `${API_ENDPOINTS.TODOS}/${id}`
 
         const response = await api.put(endpoint, {
-          title,
-          completed: todo.completed
+          title: taskData.title,
+          description: taskData.description || '',
+          is_long_term: taskData.is_long_term,
+          start_time: taskData.start_time,
+          end_time: taskData.end_time,
+          tags: taskData.tags,
+          completed: taskData.completed !== undefined ? taskData.completed : todo.completed
         })
         const index = this.todos.findIndex(t => t.id === id)
         this.todos[index] = response.data
