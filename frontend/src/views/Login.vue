@@ -89,17 +89,29 @@ import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const username = ref('')
 const password = ref('')
+const loading = ref(false)
 
 const handleSubmit = async () => {
+  if (loading.value) return
+  loading.value = true
+  
   try {
-    await authStore.login(username.value, password.value)
+    const success = await authStore.login(username.value, password.value)
+    if (success) {
+      // 使用 replace 而不是 push，这样用户不能通过后退按钮回到登录页
+      await router.replace('/')
+    }
   } catch (error) {
     console.error('Login failed:', error)
+  } finally {
+    loading.value = false
   }
 }
 </script> 

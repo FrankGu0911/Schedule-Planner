@@ -1,46 +1,48 @@
 <template>
   <MainLayout>
-    <div class="max-w-[calc(100vw-20rem)] mx-auto">
-      <!-- 筛选器 -->
-      <div class="mb-6 flex items-center space-x-4">
-        <select
-          v-model="statusFilter"
-          class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        >
-          <option value="">所有状态</option>
-          <option value="inactive">待激活</option>
-          <option value="active">已激活</option>
-          <option value="blocked">已禁用</option>
-        </select>
+    <div class="w-full lg:max-w-[calc(100vw-20rem)] lg:mx-auto">
+      <!-- 筛选器和统计信息 -->
+      <div class="mb-6 flex flex-col lg:flex-row gap-4 lg:items-center">
+        <div class="flex flex-wrap gap-2">
+          <select
+            v-model="statusFilter"
+            class="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">所有状态</option>
+            <option value="inactive">待激活</option>
+            <option value="active">已激活</option>
+            <option value="blocked">已禁用</option>
+          </select>
 
-        <select
-          v-model="roleFilter"
-          class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        >
-          <option value="">所有角色</option>
-          <option value="user">普通用户</option>
-          <option value="admin">管理员</option>
-        </select>
+          <select
+            v-model="roleFilter"
+            class="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">所有角色</option>
+            <option value="user">普通用户</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
 
         <!-- 统计信息 -->
-        <div class="ml-auto flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-          <div class="flex items-center space-x-2">
-            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 rounded-full text-xs">
+        <div class="flex flex-wrap gap-2 lg:ml-auto">
+          <div class="flex flex-wrap gap-2">
+            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300 rounded-full text-xs whitespace-nowrap">
               待激活: {{ inactiveCount }}
             </span>
-            <span class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-full text-xs">
+            <span class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-full text-xs whitespace-nowrap">
               已激活: {{ activeCount }}
             </span>
-            <span class="px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-full text-xs">
+            <span class="px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-full text-xs whitespace-nowrap">
               已禁用: {{ blockedCount }}
             </span>
           </div>
-          <div class="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
-          <div class="flex items-center space-x-2">
-            <span class="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 rounded-full text-xs">
+          <div class="hidden lg:block h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
+          <div class="flex flex-wrap gap-2">
+            <span class="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 rounded-full text-xs whitespace-nowrap">
               管理员: {{ adminCount }}
             </span>
-            <span class="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded-full text-xs">
+            <span class="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded-full text-xs whitespace-nowrap">
               普通用户: {{ userCount }}
             </span>
           </div>
@@ -49,7 +51,8 @@
 
       <!-- 用户列表 -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-        <div class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <!-- 桌面端表格 -->
+        <div class="hidden lg:block min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <!-- 表头 -->
           <div class="bg-gray-50 dark:bg-gray-700">
             <div class="grid grid-cols-6 gap-4 px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -145,6 +148,100 @@
                   修改密码
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 移动端卡片列表 -->
+        <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
+          <div
+            v-for="user in filteredUsers"
+            :key="user.id"
+            class="p-4 space-y-4"
+          >
+            <!-- 用户信息 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <Icon icon="ph:user-circle" class="w-6 h-6 mr-2 text-gray-400" />
+                <span class="text-base font-medium text-gray-900 dark:text-gray-100">
+                  {{ user.username }}
+                </span>
+              </div>
+              <span
+                :class="[
+                  'px-2 py-1 text-xs font-medium rounded-full',
+                  user.role === 'admin'
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                ]"
+              >
+                {{ user.role === 'admin' ? '管理员' : '普通用户' }}
+              </span>
+            </div>
+
+            <!-- 状态和时间 -->
+            <div class="flex items-center justify-between text-sm">
+              <span
+                :class="[
+                  'px-2 py-1 text-xs font-medium rounded-full',
+                  user.status === 'active'
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                    : user.status === 'inactive'
+                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                ]"
+              >
+                {{ 
+                  user.status === 'active' ? '已激活' :
+                  user.status === 'inactive' ? '待激活' :
+                  '已禁用'
+                }}
+              </span>
+              <span class="text-gray-500 dark:text-gray-400">
+                {{ formatDate(user.created_at) }}
+              </span>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex flex-wrap gap-2">
+              <template v-if="user.status === 'inactive'">
+                <button
+                  @click="activateUser(user.id)"
+                  class="flex-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm"
+                >
+                  激活
+                </button>
+              </template>
+              <template v-else-if="user.status === 'active'">
+                <button
+                  @click="blockUser(user.id)"
+                  class="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"
+                >
+                  禁用
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  @click="activateUser(user.id)"
+                  class="flex-1 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm"
+                >
+                  解禁
+                </button>
+              </template>
+
+              <button
+                @click="changeRole(user.id, user.role === 'admin' ? 'user' : 'admin')"
+                class="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm"
+              >
+                {{ user.role === 'admin' ? '设为用户' : '设为管理员' }}
+              </button>
+
+              <button
+                @click="openPasswordDialog(user.id)"
+                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm"
+              >
+                修改密码
+              </button>
             </div>
           </div>
         </div>

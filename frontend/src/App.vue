@@ -20,39 +20,34 @@ onBeforeMount(async () => {
   // 初始化主题
   themeStore.initTheme()
   
-  // 恢复用户状态
-  const token = localStorage.getItem('token')
-  const userStr = localStorage.getItem('user')
-  
-  if (token && userStr) {
-    try {
-      const user = JSON.parse(userStr)
-      
-      // 如果用户状态不是active，清除认证信息并跳转到登录页
-      if (user.status !== 'active') {
-        authStore.clearAuth()
-        if (router.currentRoute.value.meta.requiresAuth) {
-          router.push('/login')
-        }
-        return
-      }
-      
-      authStore.token = token
-      authStore.user = user
-      
-      // 如果当前路由需要认证，加载任务数据
-      if (router.currentRoute.value.meta.requiresAuth) {
-        await todoStore.fetchTodos()
-      }
-    } catch (error) {
-      console.error('Failed to restore user state:', error)
-      authStore.clearAuth()
-      if (router.currentRoute.value.meta.requiresAuth) {
-        router.push('/login')
-      }
+  // 检查认证状态
+  if (!authStore.isAuthenticated) {
+    // 如果没有认证，且当前路由需要认证，则跳转到登录页
+    if (router.currentRoute.value.meta.requiresAuth) {
+      router.replace('/login')
     }
-  } else if (router.currentRoute.value.meta.requiresAuth) {
-    router.push('/login')
+    return
+  }
+  
+  // 如果用户状态不是 active，清除认证信息并跳转到登录页
+  if (authStore.user?.status !== 'active') {
+    authStore.logout()
+    if (router.currentRoute.value.meta.requiresAuth) {
+      router.replace('/login')
+    }
+    return
+  }
+  
+  // 如果当前路由需要认证，加载任务数据
+  if (router.currentRoute.value.meta.requiresAuth) {
+    try {
+      await todoStore.fetchTodos()
+    } catch (error) {
+      console.error('Failed to fetch todos:', error)
+      // 如果获取数据失败，可能是 token 过期，清除认证信息
+      authStore.logout()
+      router.replace('/login')
+    }
   }
 })
 </script>

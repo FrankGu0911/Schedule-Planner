@@ -19,6 +19,9 @@ import MainLayout from '../components/MainLayout.vue'
 import PasswordDialog from '../components/PasswordDialog.vue'
 import { useAuthStore } from '../stores/auth'
 import axios from 'axios'
+import { API_CONFIG } from '../config/api'
+
+const api = axios.create(API_CONFIG)
 
 const authStore = useAuthStore()
 const showDialog = ref(true)
@@ -35,8 +38,8 @@ const handleSubmit = async ({ currentPassword, newPassword, error: validationErr
   error.value = ''
 
   try {
-    const response = await axios.put(
-      'http://localhost:8080/api/v1/users/password',
+    const response = await api.put(
+      '/api/v1/users/password',
       {
         currentPassword,
         newPassword
