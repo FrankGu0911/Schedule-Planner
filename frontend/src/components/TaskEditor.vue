@@ -145,12 +145,37 @@
         </button>
       </div>
     </form>
+
+    <!-- 智能识别部分 -->
+    <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div class="space-y-4">
+        <textarea
+          v-model="aiInput"
+          rows="3"
+          class="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+          placeholder="粘贴您的任务内容在此，我们将自动识别并整理您的待办事项。例：明天下午3点与团队开会"
+        ></textarea>
+        <div class="flex justify-end">
+          <button
+            type="button"
+            @click="handleAiRecognize"
+            :disabled="aiLoading || !aiInput.trim()"
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <Icon v-if="aiLoading" icon="ph:circle-notch-bold" class="w-4 h-4 animate-spin" />
+            <span>{{ aiLoading ? '识别中...' : '智能识别' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import axios from 'axios'
+import { useToastStore } from '../stores/toast'
 
 const props = defineProps({
   task: {
@@ -161,9 +186,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit', 'cancel'])
-
+const toastStore = useToastStore()
 const isEdit = computed(() => props.task?.id !== undefined)
 const newTag = ref('')
+const aiInput = ref('')
+const aiLoading = ref(false)
 
 // 获取当前时间，格式化为 datetime-local 格式（本地时区）
 const getCurrentDateTime = () => {
@@ -258,38 +285,83 @@ const removeTag = (tag) => {
   }
 }
 
-// 初始化表单数据
 onMounted(() => {
   if (props.task) {
-    const { title, description, start_time, end_time, is_long_term, tags } = props.task
-    Object.assign(form, {
-      title: title || '',
-      description: description || '',
-      is_long_term: is_long_term || false,
-      tags: tags || [],
-      // 将UTC时间转换为本地时间显示
-      start_time: start_time ? utcToLocal(start_time) : getCurrentDateTime(),
-      end_time: end_time ? utcToLocal(end_time) : ''
-    })
+    form.title = props.task.title
+    form.description = props.task.description || ''
+    form.start_time = utcToLocal(props.task.start_time)
+    form.end_time = utcToLocal(props.task.end_time)
+    form.is_long_term = props.task.is_long_term === 1
+    form.tags = props.task.tags || []
   }
 })
 
 const handleSubmit = () => {
-  const data = {
+  const formData = {
     title: form.title,
-    description: form.description || '',
-    is_long_term: form.is_long_term,
-    // 将本地时间转换为UTC时间提交给API
+    description: form.description,
     start_time: localToUTC(form.start_time),
     end_time: form.is_long_term ? null : localToUTC(form.end_time),
+    is_long_term: form.is_long_term ? 1 : 0,
     tags: form.tags
   }
-  
-  // 如果是编辑模式，需要保持原有的 completed 状态
-  if (isEdit.value && props.task.completed !== undefined) {
-    data.completed = props.task.completed
+
+  if (isEdit.value) {
+    formData.id = props.task.id
+    formData.completed = props.task.completed
   }
-  
-  emit('submit', data)
+
+  emit('submit', formData)
+}
+
+const handleAiRecognize = async () => {
+  if (!aiInput.value.trim() || aiLoading.value) return
+
+  aiLoading.value = true
+  try {
+    const response = await axios.post('https://dify.frankgu.club:8888/v1/workflows/run', {
+      inputs: { input: aiInput.value.trim() },
+      response_mode: "blocking",
+      user: "frank"
+    }, {
+      headers: {
+        'Authorization': 'Bearer app-aFzcAUK2Xap71boryALR4Pc5',
+        'Content-Type': 'application/json'
+      }
+    })
+
+    // 解析响应数据
+    if (response.data?.data?.outputs) {
+      const outputs = response.data.data.outputs
+      
+      // 填充表单数据
+      form.title = outputs.title || aiInput.value.trim()
+      form.description = outputs.description || ''
+      
+      // 直接使用 AI 返回的时间，不做时区转换
+      if (outputs.start_time) {
+        form.start_time = outputs.start_time.replace(' ', 'T')
+      }
+      if (outputs.end_time) {
+        form.end_time = outputs.end_time.replace(' ', 'T')
+      }
+      
+      // 处理长期任务标志（0/1）
+      form.is_long_term = outputs.is_long_term === 1
+      
+      // 处理标签
+      form.tags = outputs.tags || []
+
+      toastStore.show('已成功识别任务内容', 'success')
+      aiInput.value = '' // 清空输入
+    } else {
+      throw new Error('无效的响应数据')
+    }
+  } catch (error) {
+    console.error('AI recognition error:', error)
+    toastStore.show('识别失败，请重试', 'error')
+  } finally {
+    aiLoading.value = false
+  }
 }
 </script> 
