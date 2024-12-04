@@ -117,7 +117,7 @@ type Todo struct {
     Title       string      `json:"title" binding:"required" gorm:"not null"`
     Description string      `json:"description"`
     Completed   bool        `json:"completed" gorm:"default:false"`
-    IsLongTerm  bool        `json:"is_long_term" gorm:"default:false"`
+    IsLongTerm  uint8       `json:"is_long_term" gorm:"type:tinyint;default:0"`
     UserID      uint        `json:"user_id" gorm:"not null"`
     StartTime   CustomTime  `json:"start_time" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
     EndTime     CustomTime  `json:"end_time" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
@@ -142,12 +142,12 @@ func (t *Todo) BeforeCreate() error {
 }
 
 type CreateTodoRequest struct {
-    Title       string     `json:"title" binding:"required"`
-    Description string     `json:"description"`
-    IsLongTerm  *bool      `json:"is_long_term,omitempty"` // 使用指针类型，可以判断是否提供了该字段
+    Title       string      `json:"title" binding:"required"`
+    Description string      `json:"description"`
+    IsLongTerm  *uint8      `json:"is_long_term,omitempty"` // 使用指针类型，可以判断是否提供了该字段
     StartTime   *CustomTime `json:"start_time,omitempty"`   // 使用指针类型，可以判断是否提供了该字段
     EndTime     *CustomTime `json:"end_time,omitempty"`     // 使用指针类型，可以判断是否提供了该字段
-    Tags        []string   `json:"tags"`
+    Tags        []string    `json:"tags"`
 }
 
 // ToTodo 将请求转换为Todo模型，并设置默认值
@@ -157,9 +157,10 @@ func (r *CreateTodoRequest) ToTodo(userID uint) *Todo {
         Description: r.Description,
         UserID:      userID,
         Tags:        r.Tags,
+        IsLongTerm:  0, // 默认为0
     }
 
-    // 设置是否为长期任务的默认值
+    // 设置是否为长期任务
     if r.IsLongTerm != nil {
         todo.IsLongTerm = *r.IsLongTerm
     }
@@ -181,7 +182,7 @@ type UpdateTodoRequest struct {
     Title       string      `json:"title"`
     Description string      `json:"description"`
     Completed   *bool       `json:"completed,omitempty"`
-    IsLongTerm  *bool       `json:"is_long_term,omitempty"`
+    IsLongTerm  *uint8      `json:"is_long_term,omitempty"`
     StartTime   *CustomTime `json:"start_time,omitempty"`
     EndTime     *CustomTime `json:"end_time,omitempty"`
     Tags        []string    `json:"tags"`

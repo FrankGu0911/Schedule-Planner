@@ -179,7 +179,7 @@ const getCurrentDateTime = () => {
 // 将UTC时间字符串转换为本地 datetime-local 格式
 const utcToLocal = (utcStr) => {
   if (!utcStr) return ''
-  const date = new Date(utcStr)
+  const date = new Date(utcStr + 'Z')
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -191,13 +191,13 @@ const utcToLocal = (utcStr) => {
 // 将本地 datetime-local 格式转换为UTC时间字符串（API格式）
 const localToUTC = (localStr) => {
   if (!localStr) return null
-  const localDate = new Date(localStr)
-  const utcYear = localDate.getUTCFullYear()
-  const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0')
-  const utcDay = String(localDate.getUTCDate()).padStart(2, '0')
-  const utcHours = String(localDate.getUTCHours()).padStart(2, '0')
-  const utcMinutes = String(localDate.getUTCMinutes()).padStart(2, '0')
-  const utcSeconds = String(localDate.getUTCSeconds()).padStart(2, '0')
+  const date = new Date(localStr)
+  const utcYear = date.getUTCFullYear()
+  const utcMonth = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const utcDay = String(date.getUTCDate()).padStart(2, '0')
+  const utcHours = String(date.getUTCHours()).padStart(2, '0')
+  const utcMinutes = String(date.getUTCMinutes()).padStart(2, '0')
+  const utcSeconds = String(date.getUTCSeconds()).padStart(2, '0')
   return `${utcYear}-${utcMonth}-${utcDay} ${utcHours}:${utcMinutes}:${utcSeconds}`
 }
 

@@ -97,7 +97,7 @@ export const useTodoStore = defineStore('todo', {
         const response = await api.post(endpoint, { 
           title: taskData.title,
           description: taskData.description || '',
-          is_long_term: taskData.is_long_term,
+          is_long_term: taskData.is_long_term ? 1 : 0,
           start_time: taskData.start_time,
           end_time: taskData.end_time,
           tags: taskData.tags
@@ -142,7 +142,7 @@ export const useTodoStore = defineStore('todo', {
         const response = await api.put(endpoint, {
           title: taskData.title,
           description: taskData.description || '',
-          is_long_term: taskData.is_long_term,
+          is_long_term: taskData.is_long_term ? 1 : 0,
           start_time: taskData.start_time,
           end_time: taskData.end_time,
           tags: taskData.tags,
