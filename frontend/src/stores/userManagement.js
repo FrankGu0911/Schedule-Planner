@@ -26,7 +26,8 @@ const API_ENDPOINTS = {
   ACTIVATE_USER: (id) => `/api/v1/admin/users/${id}/activate`,
   BLOCK_USER: (id) => `/api/v1/admin/users/${id}/block`,
   CHANGE_ROLE: (id) => `/api/v1/admin/users/${id}/role`,
-  CHANGE_PASSWORD: (id) => `/api/v1/admin/users/${id}/password`
+  CHANGE_PASSWORD: (id) => `/api/v1/admin/users/${id}/password`,
+  DELETE_USER: (id) => `/api/v1/admin/users/${id}`
 }
 
 export const useUserManagementStore = defineStore('userManagement', {
@@ -124,6 +125,22 @@ export const useUserManagementStore = defineStore('userManagement', {
       } catch (error) {
         console.error('Change password error:', error)
         this.error = error.response?.data?.error || '修改密码失败'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async deleteUser(userId) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await api.delete(API_ENDPOINTS.DELETE_USER(userId))
+        if (response.data?.user) {
+          this.users = this.users.filter(u => u.id !== userId)
+        }
+      } catch (error) {
+        console.error('Delete user error:', error)
+        this.error = error.response?.data?.error || '删除用户失败'
       } finally {
         this.loading = false
       }

@@ -319,7 +319,7 @@ const handleAiRecognize = async () => {
 
   aiLoading.value = true
   try {
-    const response = await axios.post('https://dify.frankgu.club:8888/v1/workflows/run', {
+    const response = await axios.post('http://frankgu.club:15050/v1/workflows/run', {
       inputs: { input: aiInput.value.trim() },
       response_mode: "blocking",
       user: "frank"

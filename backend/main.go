@@ -62,6 +62,7 @@ func main() {
 			admin.POST("/users/:id/block", handlers.BlockUser)
 			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
 			admin.PUT("/users/:id/password", handlers.AdminUpdateUserPassword)
+			admin.DELETE("/users/:id", handlers.DeleteUser)
 		}
 
 		// Todo相关路由（需要认证）

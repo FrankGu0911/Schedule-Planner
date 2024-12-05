@@ -36,15 +36,79 @@ export const useTodoStore = defineStore('todo', {
   }),
 
   getters: {
-    filteredTodos: (state) => {
-      switch (state.filter) {
-        case 'active':
-          return state.todos.filter(todo => !todo.completed)
-        case 'completed':
-          return state.todos.filter(todo => todo.completed)
-        default:
-          return state.todos
+    filteredTodos() {
+      const now = new Date()
+      const in12Hours = new Date(now.getTime() + 12 * 60 * 60 * 1000)
+      
+      // 将待办事项分类
+      const todos = this.todos.reduce((acc, todo) => {
+        const startTime = todo.start_time ? new Date(todo.start_time) : null
+        const endTime = todo.end_time ? new Date(todo.end_time) : null
+        
+        if (todo.is_long_term) {
+          acc.longTerm.push(todo)
+        } else if (startTime) {
+          if (startTime <= in12Hours) {
+            acc.ongoing.push(todo)
+          } else {
+            acc.notStarted.push(todo)
+          }
+        } else {
+          acc.notStarted.push(todo)
+        }
+        return acc
+      }, {
+        ongoing: [],
+        longTerm: [],
+        notStarted: []
+      })
+
+      // 打印分类后的结果
+      console.log('分类结果：')
+      console.log('进行中:', todos.ongoing.map(t => t.title))
+      console.log('长期任务:', todos.longTerm.map(t => t.title))
+      console.log('未开始:', todos.notStarted.map(t => t.title))
+
+      // 对各类任务进行排序
+      todos.ongoing.sort((a, b) => {
+        const aEnd = a.end_time ? new Date(a.end_time) : new Date('9999-12-31')
+        const bEnd = b.end_time ? new Date(b.end_time) : new Date('9999-12-31')
+        return aEnd - bEnd
+      })
+
+      todos.longTerm.sort((a, b) => {
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
+
+      todos.notStarted.sort((a, b) => {
+        const aStart = a.start_time ? new Date(a.start_time) : new Date('9999-12-31')
+        const bStart = b.start_time ? new Date(b.start_time) : new Date('9999-12-31')
+        return aStart - bStart
+      })
+
+      // 打印排序后的结果
+      console.log('\n排序后：')
+      console.log('进行中:', todos.ongoing.map(t => t.title))
+      console.log('长期任务:', todos.longTerm.map(t => t.title))
+      console.log('未开始:', todos.notStarted.map(t => t.title))
+
+      // 最终结果
+      let result = [...todos.ongoing, ...todos.longTerm, ...todos.notStarted]
+      console.log('\n最终顺序:', result.map(t => t.title))
+
+      if (this.filter === 'active') {
+        result = result.filter(todo => !todo.completed)
+      } else if (this.filter === 'completed') {
+        result = result.filter(todo => todo.completed)
       }
+
+      if (this.tagFilter) {
+        result = result.filter(todo => 
+          todo.tags?.some(tag => tag.toLowerCase().includes(this.tagFilter.toLowerCase()))
+        )
+      }
+
+      return result
     },
     completionStats: (state) => {
       const total = state.todos.length

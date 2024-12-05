@@ -45,7 +45,7 @@ func GetUsers(c *gin.Context) {
 
 // ActivateUser 激活用户
 func ActivateUser(c *gin.Context) {
-    // 检查是否是管理员
+    // 检��是否是管理员
     currentUser, _ := c.Get("user")
     if !currentUser.(*models.User).IsAdmin() {
         c.JSON(http.StatusForbidden, gin.H{"error": "无权限访问"})
@@ -179,6 +179,52 @@ func AdminUpdateUserPassword(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{
         "message": "密码修改成功",
+        "user": gin.H{
+            "id":       user.ID,
+            "username": user.Username,
+            "role":     user.Role,
+            "status":   user.Status,
+        },
+    })
+}
+
+// DeleteUser 管理员删除用户
+func DeleteUser(c *gin.Context) {
+    // 检查是否是管理员
+    currentUser, _ := c.Get("user")
+    if !currentUser.(*models.User).IsAdmin() {
+        c.JSON(http.StatusForbidden, gin.H{"error": "无权限访问"})
+        return
+    }
+
+    userID := c.Param("id")
+    var user models.User
+
+    if err := database.DB.First(&user, userID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+        return
+    }
+
+    // 不能删除自己
+    if user.ID == currentUser.(*models.User).ID {
+        c.JSON(http.StatusForbidden, gin.H{"error": "不能删除自己的账号"})
+        return
+    }
+
+    // 删除用户的所有待办事项
+    if err := database.DB.Where("user_id = ?", user.ID).Delete(&models.Todo{}).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "删除用户待办事项失败"})
+        return
+    }
+
+    // 删除用户
+    if err := database.DB.Delete(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "删除用户失败"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "message": "用户删除成功",
         "user": gin.H{
             "id":       user.ID,
             "username": user.Username,

@@ -281,6 +281,38 @@ Authorization: Bearer {token}
 }
 ```
 
+#### 2.6 删除用户
+- 方法: `DELETE`
+- 路径: `/admin/users/:id`
+- 认证: 需要（仅管理员）
+
+成功响应 (200):
+```json
+{
+    "message": "用户删除成功",
+    "user": {
+        "id": 1,
+        "username": "example",
+        "role": "user",
+        "status": "active"
+    }
+}
+```
+
+错误响应 (403):
+```json
+{
+    "error": "不能删除自己的账号"
+}
+```
+
+错误响应 (404):
+```json
+{
+    "error": "用户不存在"
+}
+```
+
 ### 3. 待办事项管理
 
 #### 3.1 创建待办事项

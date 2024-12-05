@@ -19,7 +19,7 @@
             class="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           >
             <option value="">所有角色</option>
-            <option value="user">普通用户</option>
+            <option value="user">普通用</option>
             <option value="admin">管理员</option>
           </select>
         </div>
@@ -120,7 +120,13 @@
                 <template v-else-if="user.status === 'active'">
                   <button
                     @click="blockUser(user.id)"
-                    class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"
+                    :disabled="user.id === authStore.user?.id"
+                    class="px-3 py-1 text-white rounded-lg text-sm"
+                    :class="[
+                      user.id === authStore.user?.id
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-red-500 hover:bg-red-600'
+                    ]"
                   >
                     禁用
                   </button>
@@ -146,6 +152,19 @@
                   class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm"
                 >
                   修改密码
+                </button>
+
+                <button
+                  @click="deleteUser(user.id, user.username)"
+                  :disabled="user.id === authStore.user?.id"
+                  class="px-3 py-1 text-white rounded-lg text-sm"
+                  :class="[
+                    user.id === authStore.user?.id
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600'
+                  ]"
+                >
+                  删除
                 </button>
               </div>
             </div>
@@ -215,7 +234,13 @@
               <template v-else-if="user.status === 'active'">
                 <button
                   @click="blockUser(user.id)"
-                  class="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"
+                  :disabled="user.id === authStore.user?.id"
+                  class="flex-1 px-3 py-2 text-white rounded-lg text-sm"
+                  :class="[
+                    user.id === authStore.user?.id
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-500 hover:bg-red-600'
+                  ]"
                 >
                   禁用
                 </button>
@@ -242,6 +267,19 @@
               >
                 修改密码
               </button>
+
+              <button
+                @click="deleteUser(user.id, user.username)"
+                :disabled="user.id === authStore.user?.id"
+                class="flex-1 px-3 py-2 text-white rounded-lg text-sm"
+                :class="[
+                  user.id === authStore.user?.id
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600'
+                ]"
+              >
+                删除
+              </button>
             </div>
           </div>
         </div>
@@ -256,6 +294,14 @@
         @submit="handlePasswordSubmit"
         @cancel="handlePasswordCancel"
       />
+
+      <!-- 确认对话框 -->
+      <ConfirmDialog
+        v-model:show="showConfirmDialog"
+        title="确认删除"
+        :message="`确定要删除用户 '${confirmDialogData.username}' 吗？此操作不可恢复。`"
+        @confirm="handleConfirm"
+      />
     </div>
   </MainLayout>
 </template>
@@ -268,11 +314,20 @@ import { useToastStore } from '../stores/toast'
 import { format } from 'date-fns'
 import MainLayout from '../components/MainLayout.vue'
 import PasswordDialog from '../components/PasswordDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
+import { useAuthStore } from '../stores/auth'
 
 const userManagementStore = useUserManagementStore()
 const toastStore = useToastStore()
+const authStore = useAuthStore()
 const showPasswordDialog = ref(false)
 const selectedUserId = ref(null)
+const showConfirmDialog = ref(false)
+const confirmDialogData = ref({
+  userId: null,
+  username: '',
+  action: ''
+})
 
 const statusFilter = ref('')
 const roleFilter = ref('')
@@ -354,5 +409,26 @@ const handlePasswordCancel = () => {
   showPasswordDialog.value = false
   selectedUserId.value = null
   userManagementStore.error = null
+}
+
+// 修改删除用户方法
+const deleteUser = (userId, username) => {
+  confirmDialogData.value = {
+    userId,
+    username,
+    action: 'delete'
+  }
+  showConfirmDialog.value = true
+}
+
+// 添加确认对话框处理方法
+const handleConfirm = async () => {
+  showConfirmDialog.value = false
+  if (confirmDialogData.value.action === 'delete') {
+    await userManagementStore.deleteUser(confirmDialogData.value.userId)
+    if (!userManagementStore.error) {
+      toastStore.success('用户删除成功')
+    }
+  }
 }
 </script> 
