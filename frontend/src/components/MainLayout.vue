@@ -146,6 +146,20 @@
             <span v-if="sidebarOpen || !isLargeScreen" class="ml-3">待办事项</span>
           </router-link>
 
+          <!-- 时程表 -->
+          <router-link
+            to="/timeline"
+            class="flex items-center px-3 py-2 rounded-lg text-left"
+            :class="[
+              $route.path === '/timeline' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
+              { 'justify-center': !sidebarOpen && isLargeScreen }
+            ]"
+            @click="closeSidebarOnMobile"
+          >
+            <Icon icon="ph:calendar-bold" class="w-6 h-6" />
+            <span v-if="sidebarOpen || !isLargeScreen" class="ml-3">时程表</span>
+          </router-link>
+
           <!-- 用户管理（仅管理员可见） -->
           <router-link
             v-if="authStore.isAdmin"

@@ -25,6 +25,11 @@ const router = createRouter({
       path: '/user-management',
       component: () => import('../views/UserManagement.vue'),
       meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: '/timeline',
+      component: () => import('../views/Timeline.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

@@ -26,24 +26,37 @@
       </div>
 
       <!-- 筛选器和统计 -->
-      <div class="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <!-- 筛选器 -->
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="flex items-center space-x-2">
-            <span class="text-sm text-gray-600 dark:text-gray-400">状态：</span>
-            <select
-              v-model="todoStore.filter"
-              class="px-2 sm:px-3 py-1 sm:py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-            >
-              <option value="all">全部</option>
-              <option value="active">进行中</option>
-              <option value="completed">已完成</option>
-            </select>
+      <div class="mb-4 sm:mb-6 space-y-4">
+        <!-- 第一：筛选器 -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <!-- 状态筛选 -->
+          <div class="flex items-center gap-2 sm:w-48 flex-shrink-0">
+            <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">状态：</span>
+            <div class="flex-1">
+              <Dropdown
+                v-model="todoStore.filter"
+                :options="statusOptions"
+                placeholder="选择状态"
+              />
+            </div>
+          </div>
+
+          <!-- 标签筛选 -->
+          <div class="flex items-start gap-2 flex-1 max-w-xl">
+            <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap mt-2">标签：</span>
+            <div class="flex-1 min-w-0">
+              <Dropdown
+                v-model="selectedTags"
+                :options="tagOptions"
+                multiple
+                placeholder="选择标签"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- 统计信息 -->
-        <div class="flex flex-wrap items-center gap-4 text-sm">
+        <!-- 第二行：统计信息 -->
+        <div class="flex flex-wrap items-center gap-4 text-sm border-t dark:border-gray-700 pt-4">
           <div class="flex items-center space-x-1">
             <Icon icon="ph:list-numbers" class="w-4 h-4 text-gray-400" />
             <span class="text-gray-600 dark:text-gray-400">
@@ -106,7 +119,9 @@
           <p class="mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400">
             {{ todoStore.filter === 'all' ? '开始添加您的第一个任务吧' :
                todoStore.filter === 'active' ? '没有进行中的任务' :
-               '没有已完成的任务' }}
+               todoStore.filter === 'completed' ? '没有已完成的任务' :
+               todoStore.filter === 'overdue' ? '没有已超时的任务' :
+               '没有符合条件的任务' }}
           </p>
         </div>
       </TransitionGroup>
@@ -115,18 +130,51 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useTodoStore } from '../stores/todo'
 import MainLayout from '../components/MainLayout.vue'
 import TaskEditor from '../components/TaskEditor.vue'
 import TodoItem from '../components/TodoItem.vue'
+import Dropdown from '../components/Dropdown.vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const todoStore = useTodoStore()
 const showTaskEditor = ref(false)
 const editingTodo = ref(null)
+const selectedTags = ref([])
+
+// 计算超时任务数量
+const overdueCount = computed(() => {
+  const now = new Date()
+  return todoStore.todos.filter(todo => {
+    if (todo.completed || todo.is_long_term) return false
+    if (!todo.end_time) return false
+    return new Date(todo.end_time) < now
+  }).length
+})
+
+// 状态选项
+const statusOptions = computed(() => [
+  { label: '全部', value: 'all' },
+  { label: '进行中', value: 'active' },
+  { label: '已完成', value: 'completed' },
+  { label: `已超时 (${overdueCount.value})`, value: 'overdue' }
+])
+
+// 标签选项
+const tagOptions = computed(() => {
+  return todoStore.availableTags.map(tag => ({
+    label: tag,
+    value: tag
+  }))
+})
+
+// 监听标签选择变化
+watch(selectedTags, (newTags) => {
+  todoStore.setTagFilter(newTags)
+}, { deep: true })
 
 onMounted(() => {
   const userId = route.query.userId
