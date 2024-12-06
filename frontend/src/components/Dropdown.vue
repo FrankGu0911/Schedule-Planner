@@ -20,10 +20,23 @@
         </template>
         <span v-else class="trigger-text">{{ triggerText }}</span>
       </div>
-      <Icon 
-        :icon="isOpen ? 'ph:caret-up-bold' : 'ph:caret-down-bold'" 
-        class="w-4 h-4 text-gray-500 dark:text-gray-400"
-      />
+      <div class="trigger-actions">
+        <button
+          v-if="multiple && modelValue?.length > 0"
+          @click.stop="clearSelection"
+          class="clear-button"
+          type="button"
+        >
+          <Icon 
+            icon="ph:x-circle" 
+            class="w-4 h-4 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+          />
+        </button>
+        <Icon 
+          :icon="isOpen ? 'ph:caret-up-bold' : 'ph:caret-down-bold'" 
+          class="w-4 h-4 text-gray-500 dark:text-gray-400"
+        />
+      </div>
     </button>
 
     <div v-show="isOpen" class="dropdown-content">
@@ -86,7 +99,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选择'
+    default: '请选��'
   }
 })
 
@@ -173,6 +186,11 @@ const hashCode = (str) => {
     hash = hash & hash
   }
   return hash
+}
+
+// 清除选择
+const clearSelection = () => {
+  emit('update:modelValue', [])
 }
 </script>
 
@@ -342,5 +360,28 @@ const hashCode = (str) => {
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.trigger-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clear-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.clear-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+:root[class~="dark"] .clear-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 </style> 

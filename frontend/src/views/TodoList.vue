@@ -15,6 +15,7 @@
         <!-- 任务编辑器 -->
         <TaskEditor
           v-else
+          ref="taskEditorRef"
           :task="editingTodo"
           :loading="todoStore.loading"
           @submit="handleTaskSubmit"
@@ -27,7 +28,7 @@
 
       <!-- 筛选器和统计 -->
       <div class="mb-4 sm:mb-6 space-y-4">
-        <!-- 第一��选器 -->
+        <!-- 第一行：筛选器 -->
         <div class="flex items-center gap-6">
           <!-- 状态筛选 -->
           <div class="inline-flex items-center gap-2 w-[180px] flex-shrink-0">
@@ -114,7 +115,7 @@
             class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 dark:text-gray-600"
           />
           <p class="mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400">
-            {{ todoStore.filter === 'all' ? '开始添加您的第一个任务吧' :
+            {{ todoStore.filter === 'all' ? '开始添加您的第个任务吧' :
                todoStore.filter === 'active' ? '没有进行中的任务' :
                todoStore.filter === 'completed' ? '没有已完成的任务' :
                todoStore.filter === 'overdue' ? '没有已超时的任务' :
@@ -131,7 +132,7 @@
       :close-on-press-escape="false"
       destroy-on-close
     >
-      <!-- 对话���内容 -->
+      <!-- 对话内容 -->
     </el-dialog>
   </MainLayout>
 </template>
@@ -153,6 +154,7 @@ const editingTodo = ref(null)
 const selectedTags = ref([])
 const dialogVisible = ref(false)
 const currentDate = ref(new Date())
+const taskEditorRef = ref(null)
 
 // 计算超时任务数量
 const overdueCount = computed(() => {
@@ -208,6 +210,18 @@ const handleTaskSubmit = async (taskData) => {
 const handleEditTodo = (todo) => {
   editingTodo.value = todo
   showTaskEditor.value = true
+  nextTick(() => {
+    const editorElement = taskEditorRef.value?.$el
+    if (editorElement) {
+      const headerHeight = 64
+      const marginTop = 20
+      const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      })
+    }
+  })
 }
 
 // 添加计算属性用于对话框标题
@@ -229,6 +243,11 @@ const handleDialogClose = (done) => {
     currentDate.value = new Date()
   })
   done()
+}
+
+// 清空标签选择
+const clearTags = () => {
+  selectedTags.value = []
 }
 </script>
 

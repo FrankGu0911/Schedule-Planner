@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm">
+  <div ref="editorRef" class="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-sm">
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <!-- 标题输入 -->
       <div>
@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 
 const props = defineProps({
@@ -176,7 +176,7 @@ const tagColors = [
   { bgColor: '#F5F3FF', textColor: '#5B21B6' }, // 靛蓝
 ]
 
-// 根据标签文本生成���的颜色
+// 根据标签文本生成颜色
 const getTagColor = (tag) => {
   const index = Math.abs(hashCode(tag)) % tagColors.length
   return tagColors[index]
@@ -274,6 +274,17 @@ onMounted(() => {
     const hours = String(now.getHours()).padStart(2, '0')
     const minutes = String(now.getMinutes()).padStart(2, '0')
     formData.value.start_time = `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+})
+
+const editorRef = ref(null)
+
+// 暴露滚动方法给父组件
+defineExpose({
+  scrollIntoView: () => {
+    nextTick(() => {
+      editorRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 })
 </script> 
