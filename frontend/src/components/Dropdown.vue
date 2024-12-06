@@ -44,7 +44,7 @@
           </div>
           <span 
             class="item-label"
-            :style="option.color ? getTagStyle(option.value) : {}"
+            :style="getTagStyle(option.value)"
           >{{ option.label }}</span>
         </div>
       </template>
@@ -180,13 +180,14 @@ const hashCode = (str) => {
 .dropdown-container {
   position: relative;
   display: inline-block;
+  width: 100%;
 }
 
 .dropdown-trigger {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 120px;
+  width: 100%;
   padding: 6px 12px;
   background: white;
   border: 1px solid #e2e8f0;
@@ -218,6 +219,7 @@ const hashCode = (str) => {
 
 .trigger-content {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -225,9 +227,12 @@ const hashCode = (str) => {
 }
 
 .selected-tags {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  max-width: 100%;
 }
 
 .trigger-text {
@@ -273,27 +278,31 @@ const hashCode = (str) => {
 }
 
 .dropdown-item:hover {
-  background: #f7fafc;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 :root[class~="dark"] .dropdown-item:hover {
-  background: #2d3748;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dropdown-item.is-selected {
-  background: #ebf8ff;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 :root[class~="dark"] .dropdown-item.is-selected {
-  background: #2c5282;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-.dropdown-item .item-label {
+.item-label {
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 0.875rem;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .checkbox {
@@ -330,15 +339,8 @@ const hashCode = (str) => {
   border-radius: 12px;
   font-size: 0.75rem;
   white-space: nowrap;
-  background: #f7fafc;
-  color: #4a5568;
-  transition: all 0.2s;
-}
-
-.item-label {
-  flex: 1;
+  max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 </style> 

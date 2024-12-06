@@ -27,10 +27,10 @@
 
       <!-- 筛选器和统计 -->
       <div class="mb-4 sm:mb-6 space-y-4">
-        <!-- 第一：筛选器 -->
-        <div class="flex flex-col sm:flex-row gap-4">
+        <!-- 第一��：筛选器 -->
+        <div class="flex items-center gap-6">
           <!-- 状态筛选 -->
-          <div class="flex items-center gap-2 sm:w-48 flex-shrink-0">
+          <div class="inline-flex items-center gap-2 w-[180px] flex-shrink-0">
             <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">状态：</span>
             <div class="flex-1">
               <Dropdown
@@ -42,16 +42,13 @@
           </div>
 
           <!-- 标签筛选 -->
-          <div class="flex items-start gap-2 flex-1 max-w-xl">
-            <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap mt-2">标签：</span>
-            <div class="flex-1 min-w-0">
-              <Dropdown
-                v-model="selectedTags"
-                :options="tagOptions"
-                multiple
-                placeholder="选择标签"
-              />
-            </div>
+          <div class="flex-1">
+            <Dropdown
+              v-model="selectedTags"
+              :options="tagOptions"
+              multiple
+              placeholder="选择标签"
+            />
           </div>
         </div>
 
