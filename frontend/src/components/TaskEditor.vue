@@ -122,7 +122,7 @@
             v-model="aiInput"
             rows="3"
             class="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您���办事项。例：明天下午3点与团队开会"
+            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您的待办事项。例：明天下午3点与团队开会"
           ></textarea>
           <div class="flex justify-end">
             <button
@@ -357,32 +357,24 @@ const handleAIRecognition = async () => {
     })
 
     // 解析响应数据
-    if (response.data?.status === 'success' && response.data?.data) {
-      const aiResponse = response.data.response
+    if (response.data?.data?.status === 'succeeded' && response.data?.data?.outputs) {
+      const taskInfo = response.data.data.outputs
       
-      // 尝试从 AI 响应中提取任务信息
-      try {
-        const taskInfo = JSON.parse(aiResponse)
-        
-        // 填充表单数据
-        formData.value = {
-          ...formData.value,
-          title: taskInfo.title || aiInput.value.trim(),
-          description: taskInfo.description || '',
-          start_time: taskInfo.start_time ? taskInfo.start_time.replace(' ', 'T').slice(0, 16) : formData.value.start_time,
-          end_time: taskInfo.end_time ? taskInfo.end_time.replace(' ', 'T').slice(0, 16) : formData.value.end_time,
-          is_long_term: taskInfo.is_long_term === true,
-          tags: taskInfo.tags || []
-        }
-
-        // 显示成功提示
-        toastStore.show('已成功识别任务内容', 'success')
-      } catch (parseError) {
-        console.error('Parse AI response error:', parseError)
-        toastStore.show('无法解析AI响应内容', 'error')
+      // 填充表单数据
+      formData.value = {
+        ...formData.value,
+        title: taskInfo.title || aiInput.value.trim(),
+        description: taskInfo.description || '',
+        start_time: taskInfo.start_time ? taskInfo.start_time.replace(' ', 'T').slice(0, 16) : formData.value.start_time,
+        end_time: taskInfo.end_time ? taskInfo.end_time.replace(' ', 'T').slice(0, 16) : formData.value.end_time,
+        is_long_term: taskInfo.is_long_term === 1,
+        tags: taskInfo.tags || []
       }
+
+      // 显示成功提示
+      toastStore.show('已成功识别任务内容', 'success')
     } else {
-      throw new Error('无效的响应数据')
+      throw new Error(response.data?.data?.error || '无效的响应数据')
     }
   } catch (error) {
     console.error('AI recognition error:', error)
