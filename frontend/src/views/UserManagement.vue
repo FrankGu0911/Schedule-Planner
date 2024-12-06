@@ -4,24 +4,28 @@
       <!-- 筛选器和统计信息 -->
       <div class="mb-6 flex flex-col lg:flex-row gap-4 lg:items-center">
         <div class="flex flex-wrap gap-2">
-          <select
+          <Dropdown
             v-model="statusFilter"
-            class="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="">所有状态</option>
-            <option value="inactive">待激活</option>
-            <option value="active">已激活</option>
-            <option value="blocked">已禁用</option>
-          </select>
+            :options="[
+              { value: '', label: '所有状态' },
+              { value: 'inactive', label: '待激活', color: { backgroundColor: '#FEF3C7', color: '#92400E' } },
+              { value: 'active', label: '已激活', color: { backgroundColor: '#DCFCE7', color: '#166534' } },
+              { value: 'blocked', label: '已禁用', color: { backgroundColor: '#FEE2E2', color: '#991B1B' } }
+            ]"
+            placeholder="选择状态"
+            class="flex-1 lg:flex-none w-full lg:w-40"
+          />
 
-          <select
+          <Dropdown
             v-model="roleFilter"
-            class="flex-1 lg:flex-none px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="">所有角色</option>
-            <option value="user">普通用</option>
-            <option value="admin">管理员</option>
-          </select>
+            :options="[
+              { value: '', label: '所有角色' },
+              { value: 'user', label: '普通用户', color: { backgroundColor: '#DBEAFE', color: '#1E40AF' } },
+              { value: 'admin', label: '管理员', color: { backgroundColor: '#F3E8FF', color: '#6B21A8' } }
+            ]"
+            placeholder="选择角色"
+            class="flex-1 lg:flex-none w-full lg:w-40"
+          />
         </div>
 
         <!-- 统计信息 -->
@@ -171,7 +175,7 @@
           </div>
         </div>
 
-        <!-- 移动端卡片列表 -->
+        <!-- ��端卡片列表 -->
         <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
           <div
             v-for="user in filteredUsers"
@@ -256,17 +260,18 @@
 
               <button
                 @click="changeRole(user.id, user.role === 'admin' ? 'user' : 'admin')"
-                class="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm"
-              >
-                {{ user.role === 'admin' ? '设为用户' : '设为管理员' }}
-              </button>
+                class="flex-1 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm whitespace-pre-line min-w-[80px]"
+                v-text="user.role === 'admin' ? `设为
+用户` : `设为
+管理员`"
+              ></button>
 
               <button
                 @click="openPasswordDialog(user.id)"
-                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm"
-              >
-                修改密码
-              </button>
+                class="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm whitespace-pre-line min-w-[80px]"
+                v-text="`修改
+密码`"
+              ></button>
 
               <button
                 @click="deleteUser(user.id, user.username)"
@@ -315,6 +320,7 @@ import { format } from 'date-fns'
 import MainLayout from '../components/MainLayout.vue'
 import PasswordDialog from '../components/PasswordDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import Dropdown from '../components/Dropdown.vue'
 import { useAuthStore } from '../stores/auth'
 
 const userManagementStore = useUserManagementStore()

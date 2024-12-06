@@ -3,46 +3,49 @@
     <div class="w-full lg:max-w-[calc(100vw-20rem)] lg:mx-auto">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         <!-- 顶部控制栏 -->
-        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <div class="flex items-center space-x-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-gray-200 dark:border-gray-700 space-y-3 sm:space-y-0">
+          <!-- 第一组：今天按钮和视图切换 -->
+          <div class="flex justify-between items-center sm:w-auto">
             <button
               @click="today"
               class="px-3 py-1.5 text-sm font-medium rounded-md bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/40"
             >
               今天
             </button>
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 sm:ml-4">
               <button
-                @click="previousPeriod"
-                class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+                @click="viewMode = 'month'"
+                class="px-3 py-1.5 text-sm font-medium rounded-l-md"
+                :class="viewMode === 'month' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
               >
-                <Icon icon="ph:caret-left-bold" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                月
               </button>
               <button
-                @click="nextPeriod"
-                class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+                @click="viewMode = 'week'"
+                class="px-3 py-1.5 text-sm font-medium rounded-r-md"
+                :class="viewMode === 'week' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
               >
-                <Icon icon="ph:caret-right-bold" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                周
               </button>
             </div>
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          </div>
+          
+          <!-- 第二组：月份/周切换和标题 -->
+          <div class="flex items-center justify-center space-x-4 sm:ml-4">
+            <button
+              @click="previousPeriod"
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+            >
+              <Icon icon="ph:caret-left-bold" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            </button>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white min-w-[120px] text-center">
               {{ currentPeriodLabel }}
             </h2>
-          </div>
-          <div class="flex items-center space-x-2">
             <button
-              @click="viewMode = 'month'"
-              class="px-3 py-1.5 text-sm font-medium rounded-l-md"
-              :class="viewMode === 'month' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
+              @click="nextPeriod"
+              class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
             >
-              月
-            </button>
-            <button
-              @click="viewMode = 'week'"
-              class="px-3 py-1.5 text-sm font-medium rounded-r-md"
-              :class="viewMode === 'week' ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            >
-              周
+              <Icon icon="ph:caret-right-bold" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
           </div>
         </div>
@@ -360,7 +363,7 @@ const formatDateRange = (start, end) => {
   return `${format(start, 'yyyy年M月d日', { locale: zhCN })} - ${format(end, 'M月d日', { locale: zhCN })}`
 }
 
-// 格式化日期时间范围
+// ��式化日期时间范围
 const formatDateTimeRange = (start, end) => {
   const localStart = toLocalTime(start)
   const localEnd = toLocalTime(end)
@@ -390,7 +393,7 @@ const getDurationClass = (todo) => {
     return 'col-span-1'
   }
   
-  // 计算任务在当前视图中应该���越的列数
+  // 计算任务在当前视图中应该越的列数
   const viewStart = viewMode.value === 'month' 
     ? startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
     : startOfWeek(currentDate.value, { weekStartsOn: 1 })
