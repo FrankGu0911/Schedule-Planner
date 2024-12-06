@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(username, password) {
       try {
-        const response = await api.post('/api/v1/auth/login', {
+        const response = await api.post('/auth/login', {
           username,
           password
         })
@@ -74,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
 
     async register(username, password) {
       try {
-        const response = await api.post('/api/v1/auth/register', {
+        const response = await api.post('/auth/register', {
           username,
           password
         })
@@ -87,7 +87,7 @@ export const useAuthStore = defineStore('auth', {
 
     async changePassword(oldPassword, newPassword) {
       try {
-        await api.put('/api/v1/auth/password', {
+        await api.put('/auth/password', {
           old_password: oldPassword,
           new_password: newPassword
         })

@@ -122,7 +122,7 @@
             v-model="aiInput"
             rows="3"
             class="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您的待办事项。例：明天下午3点与团队开会"
+            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您待办事项。例：明天下午3点与团队开会"
           ></textarea>
           <div class="flex justify-end">
             <button
@@ -329,7 +329,7 @@ const handleAIRecognition = async () => {
   aiLoading.value = true
 
   try {
-    const response = await axios.post('/api/v1/ai/process', {
+    const response = await axios.post('/ai/process', {
       input: aiInput.value.trim()
     }, {
       headers: {

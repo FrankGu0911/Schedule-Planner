@@ -22,8 +22,8 @@ api.interceptors.request.use(
 
 // API 端点
 const API_ENDPOINTS = {
-  TODOS: '/api/v1/todos',
-  USER_TODOS: '/api/v1/users'
+  TODOS: '/todos',
+  USER_TODOS: '/users'
 }
 
 export const useTodoStore = defineStore('todo', {
@@ -67,7 +67,7 @@ export const useTodoStore = defineStore('todo', {
           break;
       }
 
-      // 标签筛选（支持多选）
+      // 标签筛选（持多选）
       if (this.tagFilter.length > 0) {
         result = result.filter(todo => 
           todo.tags?.some(tag => 

@@ -41,7 +41,7 @@ const handleSubmit = async ({ currentPassword, newPassword, error: validationErr
 
   try {
     const response = await api.put(
-      '/api/v1/users/password',
+      '/users/password',
       {
         currentPassword,
         newPassword

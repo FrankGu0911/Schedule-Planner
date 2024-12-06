@@ -5,11 +5,11 @@ const isDev = import.meta.env.MODE === 'development'
 const getBaseUrl = () => {
   const { protocol, hostname, port } = window.location
   if (isDev) {
-    // 开发环境使用8080端口，不包含 /api/v1 前缀
-    return `${protocol}//${hostname}:8080`
+    // 开发环境使用相对路径，让 Vite 代理处理
+    return '/api/v1'
   } else {
     // 生产环境直接使用相对路径，让 Nginx 处理代理
-    return ''
+    return '/api/v1'
   }
 }
 

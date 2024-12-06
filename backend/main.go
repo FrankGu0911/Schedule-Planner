@@ -42,46 +42,42 @@ func main() {
 	// 使用日志中间件
 	r.Use(middleware.Logger())
 
-	// 路由组
-	v1 := r.Group("/api/v1")
+	// 用户相关路由
+	auth := r.Group("/auth")
 	{
-		// 用户相关路由
-		auth := v1.Group("/auth")
-		{
-			auth.POST("/register", handlers.Register)
-			auth.POST("/login", handlers.Login)
-			auth.PUT("/password", middleware.AuthMiddleware(), handlers.UpdatePassword)
-		}
+		auth.POST("/register", handlers.Register)
+		auth.POST("/login", handlers.Login)
+		auth.PUT("/password", middleware.AuthMiddleware(), handlers.UpdatePassword)
+	}
 
-		// 管理员路由（需要认证和管理员权限）
-		admin := v1.Group("/admin")
-		admin.Use(middleware.AuthMiddleware())
-		{
-			admin.GET("/users", handlers.GetUsers)
-			admin.POST("/users/:id/activate", handlers.ActivateUser)
-			admin.POST("/users/:id/block", handlers.BlockUser)
-			admin.PUT("/users/:id/role", handlers.UpdateUserRole)
-			admin.PUT("/users/:id/password", handlers.AdminUpdateUserPassword)
-			admin.DELETE("/users/:id", handlers.DeleteUser)
-		}
+	// 管理员路由（需要认证和管理员权限）
+	admin := r.Group("/admin")
+	admin.Use(middleware.AuthMiddleware())
+	{
+		admin.GET("/users", handlers.GetUsers)
+		admin.POST("/users/:id/activate", handlers.ActivateUser)
+		admin.POST("/users/:id/block", handlers.BlockUser)
+		admin.PUT("/users/:id/role", handlers.UpdateUserRole)
+		admin.PUT("/users/:id/password", handlers.AdminUpdateUserPassword)
+		admin.DELETE("/users/:id", handlers.DeleteUser)
+	}
 
-		// Todo相关路由（需要认证）
-		todos := v1.Group("/todos")
-		todos.Use(middleware.AuthMiddleware())
-		{
-			todos.POST("", handlers.CreateTodo)
-			todos.GET("", handlers.GetTodos)
-			todos.GET("/:id", handlers.GetTodo)
-			todos.PUT("/:id", handlers.UpdateTodo)
-			todos.DELETE("/:id", handlers.DeleteTodo)
-		}
+	// Todo相关路由（需要认证）
+	todos := r.Group("/todos")
+	todos.Use(middleware.AuthMiddleware())
+	{
+		todos.POST("", handlers.CreateTodo)
+		todos.GET("", handlers.GetTodos)
+		todos.GET("/:id", handlers.GetTodo)
+		todos.PUT("/:id", handlers.UpdateTodo)
+		todos.DELETE("/:id", handlers.DeleteTodo)
+	}
 
-		// AI识别路由（需要认证）
-		ai := v1.Group("/ai")
-		ai.Use(middleware.AuthMiddleware())
-		{
-			ai.POST("/process", handlers.ProcessAI)
-		}
+	// AI识别路由（需要认证）
+	ai := r.Group("/ai")
+	ai.Use(middleware.AuthMiddleware())
+	{
+		ai.POST("/process", handlers.ProcessAI)
 	}
 
 	// 启动服务器

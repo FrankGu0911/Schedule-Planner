@@ -1,46 +1,11 @@
-# Schedule-Planner API 文档
+# API文档
 
-## 通用说明
+## 1. 用户认证
 
-### 基础URL
-```
-http://localhost:8080/api/v1
-```
-
-### 响应格式
-所有API响应均为JSON格式，包含以下基础结构：
-
-```json
-{
-    "error": "错误信息",    // 仅在发生错误时出现
-    "data": {},           // 响应数据
-    "message": ""         // 响应消息
-}
-```
-
-### 认证方式
-需要认证的接口都需要在请求头中携带 Token：
-```
-Authorization: Bearer {token}
-```
-
-### 用户角色
-- `admin`: 管理员
-- `user`: 普通用户
-
-### 用户状态
-- `inactive`: 未激活（待管理员确认）
-- `active`: 已激活
-- `blocked`: 已禁用
-
-## 接口详情
-
-### 1. 用户认证
-
-#### 1.1 用户注册
+### 1.1 用户注册
 - 方法: `POST`
 - 路径: `/auth/register`
-- Content-Type: `application/json`
+- 认证: 不需要
 
 请求参数：
 ```json
@@ -70,10 +35,10 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 1.2 用户登录
+### 1.2 用户登录
 - 方法: `POST`
 - 路径: `/auth/login`
-- Content-Type: `application/json`
+- 认证: 不需要
 
 请求参数：
 ```json
@@ -110,7 +75,7 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 1.3 修改密码
+### 1.3 修改密码
 - 方法: `PUT`
 - 路径: `/auth/password`
 - 认证: 需要
@@ -145,12 +110,13 @@ Authorization: Bearer {token}
 }
 ```
 
-### 2. 用户管理（仅管理员）
+## 2. 管理员功能
 
-#### 2.1 获取用户列表
+### 2.1 获取用户列表
 - 方法: `GET`
 - 路径: `/admin/users`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 
 查询参数：
 - `status`: 用户状态筛选（可选，inactive/active/blocked）
@@ -172,10 +138,11 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 2.2 激活用户
+### 2.2 激活用户
 - 方法: `POST`
 - 路径: `/admin/users/:id/activate`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 
 成功响应 (200):
 ```json
@@ -190,10 +157,11 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 2.3 禁用用户
+### 2.3 禁用用户
 - 方法: `POST`
 - 路径: `/admin/users/:id/block`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 
 成功响应 (200):
 ```json
@@ -208,10 +176,11 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 2.4 修改用户角色
+### 2.4 更新用户角色
 - 方法: `PUT`
 - 路径: `/admin/users/:id/role`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 - Content-Type: `application/json`
 
 请求参数：
@@ -234,10 +203,11 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 2.5 修改用户密码
+### 2.5 修改用户密码
 - 方法: `PUT`
 - 路径: `/admin/users/:id/password`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 - Content-Type: `application/json`
 
 请求参数：
@@ -281,10 +251,11 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 2.6 删除用户
+### 2.6 删除用户
 - 方法: `DELETE`
 - 路径: `/admin/users/:id`
-- 认证: 需要（仅管理员）
+- 认证: 需要
+- 权限: 管理员
 
 成功响应 (200):
 ```json
@@ -313,9 +284,9 @@ Authorization: Bearer {token}
 }
 ```
 
-### 3. 待办事项管理
+## 3. 待办事项管理
 
-#### 3.1 创建待办事项
+### 3.1 创建待办事项
 - 方法: `POST`
 - 路径: `/todos`
 - 认证: 需要
@@ -358,7 +329,7 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 3.2 获取待办事项列表
+### 3.2 获取待办事项列表
 - 方法: `GET`
 - 路径: `/todos`
 - 认证: 需要
@@ -388,7 +359,7 @@ Authorization: Bearer {token}
 ]
 ```
 
-#### 3.3 获取单个待办事项
+### 3.3 获取单个待办事项
 - 方法: `GET`
 - 路径: `/todos/:id`
 - 认证: 需要
@@ -416,7 +387,7 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 3.4 更新待办事项
+### 3.4 更新待办事项
 - 方法: `PUT`
 - 路径: `/todos/:id`
 - 认证: 需要
@@ -459,7 +430,7 @@ Authorization: Bearer {token}
 }
 ```
 
-#### 3.5 删除待办事项
+### 3.5 删除待办事项
 - 方法: `DELETE`
 - 路径: `/todos/:id`
 - 认证: 需要
@@ -478,15 +449,14 @@ Authorization: Bearer {token}
 }
 ```
 
-## AI识别接口
+## 4. AI识别接口
 
-### 发送AI识别请求
+### 4.1 发送AI识别请求
+- 方法: `POST`
+- 路径: `/ai/process`
+- 认证: 需要
 
 发送文本内容到AI进行处理和分析。
-
-- **接口路径**: `POST /api/v1/ai/process`
-- **需要认证**: 是
-- **权限要求**: 登录用户
 
 #### 请求参数
 
@@ -571,7 +541,7 @@ curl -X POST "http://your-server:8080/api/v1/ai/process" \
 成功响应示例：
 ```json
 {
-    "query": "帮我分析这段文字的情感倾向",
+    "query": "帮我分析这段���字的情感倾向",
     "response": "根据分析，这段文字表达了积极正面的情感...",
     "status": "success",
     "data": {

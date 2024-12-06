@@ -22,12 +22,12 @@ api.interceptors.request.use(
 
 // API 端点
 const API_ENDPOINTS = {
-  USERS: '/api/v1/admin/users',
-  ACTIVATE_USER: (id) => `/api/v1/admin/users/${id}/activate`,
-  BLOCK_USER: (id) => `/api/v1/admin/users/${id}/block`,
-  CHANGE_ROLE: (id) => `/api/v1/admin/users/${id}/role`,
-  CHANGE_PASSWORD: (id) => `/api/v1/admin/users/${id}/password`,
-  DELETE_USER: (id) => `/api/v1/admin/users/${id}`
+  USERS: '/admin/users',
+  ACTIVATE_USER: (id) => `/admin/users/${id}/activate`,
+  BLOCK_USER: (id) => `/admin/users/${id}/block`,
+  CHANGE_ROLE: (id) => `/admin/users/${id}/role`,
+  CHANGE_PASSWORD: (id) => `/admin/users/${id}/password`,
+  DELETE_USER: (id) => `/admin/users/${id}`
 }
 
 export const useUserManagementStore = defineStore('userManagement', {
@@ -109,7 +109,7 @@ export const useUserManagementStore = defineStore('userManagement', {
         }
       } catch (error) {
         console.error('Change role error:', error)
-        this.error = error.response?.data?.error || '修改用户角色失败'
+        this.error = error.response?.data?.error || '修改用户角色失'
       } finally {
         this.loading = false
       }
