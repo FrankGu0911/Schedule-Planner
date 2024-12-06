@@ -18,12 +18,14 @@ import { ref, onMounted } from 'vue'
 import MainLayout from '../components/MainLayout.vue'
 import PasswordDialog from '../components/PasswordDialog.vue'
 import { useAuthStore } from '../stores/auth'
+import { useToastStore } from '../stores/toast'
 import axios from 'axios'
-import { API_CONFIG } from '../config/api'
+import { API_CONFIG } from '../config/env'
 
 const api = axios.create(API_CONFIG)
 
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const showDialog = ref(true)
 const loading = ref(false)
 const error = ref('')
@@ -52,11 +54,12 @@ const handleSubmit = async ({ currentPassword, newPassword, error: validationErr
     )
 
     if (response.data?.message) {
-      alert('密码修改成功')
+      toastStore.show('密码修改成功', 'success')
       showDialog.value = false
     }
   } catch (err) {
     error.value = err.response?.data?.error || '修改密码失败'
+    toastStore.show(err.response?.data?.error || '修改密码失败', 'error')
   } finally {
     loading.value = false
   }
