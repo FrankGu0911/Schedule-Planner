@@ -11,7 +11,7 @@ var DB *gorm.DB
 
 func InitDB() {
     var err error
-    DB, err = gorm.Open(sqlite.Open("todo.db"), &gorm.Config{})
+    DB, err = gorm.Open(sqlite.Open("backend/data/todo.db"), &gorm.Config{})
     if err != nil {
         log.Fatal("数据库连接失败:", err)
     }

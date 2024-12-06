@@ -106,9 +106,13 @@ import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
+import { useToastStore } from '../stores/toast'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const toastStore = useToastStore()
 const username = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -119,13 +123,17 @@ const handleSubmit = async () => {
   
   if (password.value !== confirmPassword.value) {
     error.value = '两次输入的密码不一致'
+    toastStore.show('两次输入的密码不一致', 'error')
     return
   }
 
   try {
-    await authStore.register(username.value, password.value)
+    const response = await authStore.register(username.value, password.value)
+    toastStore.show('注册成功，请等待管理员审核', 'success')
+    await router.replace('/login')
   } catch (err) {
     console.error('Registration failed:', err)
+    toastStore.show(err, 'error')
   }
 }
 </script> 

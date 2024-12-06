@@ -25,6 +25,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # 复制后端二进制文件
 COPY --from=backend-builder /app/backend/main .
 # COPY --from=backend-builder /app/backend/todo.db ./todo.db
+RUN mkdir -p /app/backend/data
 
 # 复制前端构建文件到 Nginx 默认目录
 COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html

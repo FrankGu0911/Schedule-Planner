@@ -90,10 +90,12 @@ import { Icon } from '@iconify/vue'
 import { useAuthStore } from '../stores/auth'
 import { useThemeStore } from '../stores/theme'
 import { useRouter } from 'vue-router'
+import { useToastStore } from '../stores/toast'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const toastStore = useToastStore()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
@@ -105,11 +107,13 @@ const handleSubmit = async () => {
   try {
     const success = await authStore.login(username.value, password.value)
     if (success) {
+      toastStore.show('登录成功', 'success')
       // 使用 replace 而不是 push，这样用户不能通过后退按钮回到登录页
       await router.replace('/')
     }
   } catch (error) {
     console.error('Login failed:', error)
+    toastStore.show(error, 'error')
   } finally {
     loading.value = false
   }
