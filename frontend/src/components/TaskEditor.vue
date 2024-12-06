@@ -122,7 +122,7 @@
             v-model="aiInput"
             rows="3"
             class="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您待办事项。例：明天下午3点与团队开会"
+            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您���办事项。例：明天下午3点与团队开会"
           ></textarea>
           <div class="flex justify-end">
             <button
@@ -163,9 +163,32 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
+import { API_CONFIG } from '../config/env'
 import { useToastStore } from '../stores/toast'
+import { useAuthStore } from '../stores/auth'
+
+// 创建专门用于 AI 请求的 axios 实例，设置更长的超时时间
+const api = axios.create({
+  ...API_CONFIG,
+  timeout: 20000  // 20 秒超时
+})
+
+// 添加请求拦截器
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 const toastStore = useToastStore()
+const authStore = useAuthStore()
 
 const props = defineProps({
   task: {
@@ -329,13 +352,8 @@ const handleAIRecognition = async () => {
   aiLoading.value = true
 
   try {
-    const response = await axios.post('/ai/process', {
+    const response = await api.post('/ai/process', {
       input: aiInput.value.trim()
-    }, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json'
-      }
     })
 
     // 解析响应数据
@@ -373,4 +391,4 @@ const handleAIRecognition = async () => {
     aiLoading.value = false
   }
 }
-</script> 
+</script>
