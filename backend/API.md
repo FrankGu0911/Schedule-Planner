@@ -478,6 +478,117 @@ Authorization: Bearer {token}
 }
 ```
 
+## AI识别接口
+
+### 发送AI识别请求
+
+发送文本内容到AI进行处理和分析。
+
+- **接口路径**: `POST /api/v1/ai/process`
+- **需要认证**: 是
+- **权限要求**: 登录用户
+
+#### 请求参数
+
+```json
+{
+    "input": "要处理的文本内容"  // 必填，字符串类型
+}
+```
+
+#### 成功响应 (200 OK)
+
+```json
+{
+    "query": "原始查询内容",
+    "response": "AI处理后的响应内容",
+    "status": "success",
+    "data": {
+        // 其他相关数据
+    }
+}
+```
+
+#### 错误响应
+
+1. 认证错误 (401 Unauthorized)
+```json
+{
+    "error": "未提供认证信息"
+}
+```
+或
+```json
+{
+    "error": "认证信息无效"
+}
+```
+
+2. 请求格式错误 (400 Bad Request)
+```json
+{
+    "error": "Key: 'AIRequest.Input' Error:Field validation for 'Input' failed on the 'required' tag"
+}
+```
+
+3. 服务器错误 (500 Internal Server Error)
+```json
+{
+    "error": "请求处理失败"
+}
+```
+或
+```json
+{
+    "error": "请求失败"
+}
+```
+或
+```json
+{
+    "error": "读取响应失败"
+}
+```
+或
+```json
+{
+    "error": "解析响应失败"
+}
+```
+
+#### 示例
+
+请求示例：
+```bash
+curl -X POST "http://your-server:8080/api/v1/ai/process" \
+     -H "Authorization: Bearer your_token_here" \
+     -H "Content-Type: application/json" \
+     -d '{
+         "input": "帮我分析这段文字的情感倾向"
+     }'
+```
+
+成功响应示例：
+```json
+{
+    "query": "帮我分析这段文字的情感倾向",
+    "response": "根据分析，这段文字表达了积极正面的情感...",
+    "status": "success",
+    "data": {
+        "confidence": 0.95,
+        "sentiment": "positive"
+    }
+}
+```
+
+#### 注意事项
+
+1. 请求必须包含有效的JWT令牌在Authorization头中
+2. 请求体必须是JSON格式
+3. input字段不能为空
+4. 响应时间可能会因为AI处理而有所延迟
+5. 服务依赖于外部的Dify API服务，可能会受到该服务的可用性影响
+
 ## 注意事项
 1. 所有需要认证的接口必须在请求头中携带有效的 Token
 2. 所有时间字段统一使用 "YYYY-MM-DD HH:mm:ss" 格式，例如："2024-01-01 08:00:00"

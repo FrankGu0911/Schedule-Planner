@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { API_CONFIG } from '../config/api'
+import { API_CONFIG } from '../config/env'
 
 // 创建 axios 实例
 const api = axios.create(API_CONFIG)

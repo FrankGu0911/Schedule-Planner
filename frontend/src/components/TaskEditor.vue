@@ -127,7 +127,7 @@
           <div class="flex justify-end">
             <button
               type="button"
-              @click="handleAiRecognize"
+              @click="handleAIRecognition"
               :disabled="aiLoading || !aiInput.trim()"
               class="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
@@ -320,45 +320,55 @@ const aiInput = ref('')
 const aiLoading = ref(false)
 
 // AI 识别处理函数
-const handleAiRecognize = async () => {
-  if (!aiInput.value.trim() || aiLoading.value) return
+const handleAIRecognition = async () => {
+  if (!aiInput.value.trim()) {
+    toastStore.show('请输入任务内容', 'error')
+    return
+  }
 
   aiLoading.value = true
+
   try {
-    const response = await axios.post('http://frankgu.club:15050/v1/workflows/run', {
-      inputs: { input: aiInput.value.trim() },
-      response_mode: "blocking",
-      user: "frank"
+    const response = await axios.post('/api/v1/ai/process', {
+      input: aiInput.value.trim()
     }, {
       headers: {
-        'Authorization': 'Bearer app-aFzcAUK2Xap71boryALR4Pc5',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
         'Content-Type': 'application/json'
       }
     })
 
     // 解析响应数据
-    if (response.data?.data?.outputs) {
-      const outputs = response.data.data.outputs
+    if (response.data?.status === 'success' && response.data?.data) {
+      const aiResponse = response.data.response
       
-      // 填充表单数据
-      formData.value = {
-        ...formData.value,
-        title: outputs.title || aiInput.value.trim(),
-        description: outputs.description || '',
-        start_time: outputs.start_time ? outputs.start_time.replace(' ', 'T').slice(0, 16) : formData.value.start_time,
-        end_time: outputs.end_time ? outputs.end_time.replace(' ', 'T').slice(0, 16) : formData.value.end_time,
-        is_long_term: outputs.is_long_term === 1,
-        tags: outputs.tags || []
-      }
+      // 尝试从 AI 响应中提取任务信息
+      try {
+        const taskInfo = JSON.parse(aiResponse)
+        
+        // 填充表单数据
+        formData.value = {
+          ...formData.value,
+          title: taskInfo.title || aiInput.value.trim(),
+          description: taskInfo.description || '',
+          start_time: taskInfo.start_time ? taskInfo.start_time.replace(' ', 'T').slice(0, 16) : formData.value.start_time,
+          end_time: taskInfo.end_time ? taskInfo.end_time.replace(' ', 'T').slice(0, 16) : formData.value.end_time,
+          is_long_term: taskInfo.is_long_term === true,
+          tags: taskInfo.tags || []
+        }
 
-      // 显示成功提示
-      toastStore.show('已成功识别任务内容', 'success')
+        // 显示成功提示
+        toastStore.show('已成功识别任务内容', 'success')
+      } catch (parseError) {
+        console.error('Parse AI response error:', parseError)
+        toastStore.show('无法解析AI响应内容', 'error')
+      }
     } else {
       throw new Error('无效的响应数据')
     }
   } catch (error) {
     console.error('AI recognition error:', error)
-    toastStore.show('识别失败，请重试', 'error')
+    toastStore.show(error.response?.data?.error || '识别失败，请重试', 'error')
   } finally {
     aiLoading.value = false
   }

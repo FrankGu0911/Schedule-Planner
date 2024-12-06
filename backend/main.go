@@ -75,6 +75,13 @@ func main() {
 			todos.PUT("/:id", handlers.UpdateTodo)
 			todos.DELETE("/:id", handlers.DeleteTodo)
 		}
+
+		// AI识别路由（需要认证）
+		ai := v1.Group("/ai")
+		ai.Use(middleware.AuthMiddleware())
+		{
+			ai.POST("/process", handlers.ProcessAI)
+		}
 	}
 
 	// 启动服务器
