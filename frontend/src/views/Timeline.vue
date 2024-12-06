@@ -115,18 +115,19 @@
     </div>
 
     <!-- 日期详情对话框 -->
-    <TransitionRoot appear :show="!!selectedDate && !isClosing" as="template">
+    <TransitionRoot appear :show="!!selectedDate" as="template">
       <Dialog 
         as="div" 
         @close="closeDialog" 
         class="relative z-50"
+        :open="!!selectedDate"
       >
         <TransitionChild
           as="template"
-          enter="duration-300 ease-out"
+          enter="duration-150 ease-out"
           enter-from="opacity-0"
           enter-to="opacity-100"
-          leave="duration-200 ease-in"
+          leave="duration-150 ease-in"
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
@@ -137,10 +138,10 @@
           <div class="flex min-h-full items-center justify-center p-4">
             <TransitionChild
               as="template"
-              enter="duration-300 ease-out"
+              enter="duration-150 ease-out"
               enter-from="opacity-0 scale-95"
               enter-to="opacity-100 scale-100"
-              leave="duration-200 ease-in"
+              leave="duration-150 ease-in"
               leave-from="opacity-100 scale-100"
               leave-to="opacity-0 scale-95"
             >
@@ -237,7 +238,6 @@ const todoStore = useTodoStore()
 const viewMode = ref('month')
 const currentDate = ref(new Date())
 const selectedDate = ref(null)
-const isClosing = ref(false)
 
 // 在组件挂载时加载任务数据
 onMounted(async () => {
@@ -298,45 +298,57 @@ const isToday = (date) => {
 
 // 获取指定日期的任务
 const getTodosForDate = (date) => {
+  if (!date) return []
+  
+  // 确保传入的日期是 Date 对象
+  const targetDate = date instanceof Date ? date : new Date(date)
+  if (isNaN(targetDate.getTime())) return []
+  
   return todoStore.todos.filter(todo => {
     if (!todo.start_time || !todo.end_time) return false
     
-    const endDate = new Date(todo.end_time)
-    const startDate = new Date(todo.start_time)
+    const endDate = new Date(todo.end_time + 'Z')
+    const startDate = new Date(todo.start_time + 'Z')
     
-    // 确保日期是凌晨 00:00:00
-    const targetDate = new Date(date)
-    targetDate.setHours(0, 0, 0, 0)
-    endDate.setHours(0, 0, 0, 0)
-    startDate.setHours(0, 0, 0, 0)
+    // 使用本地变量存储日期，避免修改原始对象
+    const endDateLocal = new Date(endDate.getTime())
+    const startDateLocal = new Date(startDate.getTime())
+    endDateLocal.setHours(0, 0, 0, 0)
+    startDateLocal.setHours(0, 0, 0, 0)
     
-    const duration = differenceInDays(endDate, startDate)
+    // 设置目标日期为当天开始时间
+    const targetDateCopy = new Date(targetDate.getTime())
+    targetDateCopy.setHours(0, 0, 0, 0)
+    
+    const duration = differenceInDays(endDateLocal, startDateLocal)
 
     // 如果是长期任务，不显示
     if (todo.is_long_term) {
       return false
     }
 
+    // 创建一个新的对象来存储标记，避免修改原始对象
+    const todoWithMarks = { ...todo }
+    todoWithMarks.isEndDay = false
+    todoWithMarks.isSevenDayBefore = false
+
     // 如果持续时间超过7天，只显示结束时间和倒数第7天
     if (duration > 7) {
-      const sevenDaysBefore = addDays(endDate, -7)
+      const sevenDaysBefore = addDays(endDateLocal, -7)
       sevenDaysBefore.setHours(0, 0, 0, 0)
       
-      if (isSameDay(targetDate, endDate)) {
-        // 在结束日显示，添加标记表明是结束日
-        todo.isEndDay = true
+      if (isSameDay(targetDateCopy, endDateLocal)) {
+        todoWithMarks.isEndDay = true
         return true
       }
-      if (isSameDay(targetDate, sevenDaysBefore)) {
-        // 在倒数第7天显示，添加标记表明是倒数第7天
-        todo.isSevenDayBefore = true
+      if (isSameDay(targetDateCopy, sevenDaysBefore)) {
+        todoWithMarks.isSevenDayBefore = true
         return true
       }
       return false
     }
 
-    // 对于短期任务（7天及以内），如果日期在任务的开始和结束日期之间，就显示
-    return isWithinInterval(targetDate, { start: startDate, end: endDate })
+    return isWithinInterval(targetDateCopy, { start: startDateLocal, end: endDateLocal })
   })
 }
 
@@ -360,19 +372,25 @@ const formatDateTimeRange = (start, end) => {
 
 // 获取任务持续时间的样式类
 const getDurationClass = (todo) => {
-  const startDate = new Date(todo.start_time)
-  const endDate = new Date(todo.end_time)
-  startDate.setHours(0, 0, 0, 0)
-  endDate.setHours(0, 0, 0, 0)
+  if (!todo.start_time || !todo.end_time) return 'col-span-1'
   
-  const duration = differenceInDays(endDate, startDate)
+  const startDate = new Date(todo.start_time + 'Z')
+  const endDate = new Date(todo.end_time + 'Z')
+  
+  // 使用本地变量存储日期
+  const startLocal = new Date(startDate.getTime())
+  const endLocal = new Date(endDate.getTime())
+  startLocal.setHours(0, 0, 0, 0)
+  endLocal.setHours(0, 0, 0, 0)
+  
+  const duration = differenceInDays(endLocal, startLocal)
   
   // 如果是长期任务（超过7天）
   if (duration > 7) {
     return 'col-span-1'
   }
   
-  // 计算任务在当前视图中应该跨越的列数
+  // 计算任务在当前视图中应该���越的列数
   const viewStart = viewMode.value === 'month' 
     ? startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
     : startOfWeek(currentDate.value, { weekStartsOn: 1 })
@@ -381,10 +399,9 @@ const getDurationClass = (todo) => {
     ? endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 })
     : endOfWeek(currentDate.value, { weekStartsOn: 1 })
   
-  // 如果任务的开始日期在视图范围之前，从视图开始日期算起
-  const effectiveStart = startDate < viewStart ? viewStart : startDate
-  // 如果任务的结束日期在视图范围之后，到视图结束日期为止
-  const effectiveEnd = endDate > viewEnd ? viewEnd : endDate
+  // 使用本地变量计算有效日期范围
+  const effectiveStart = startLocal < viewStart ? viewStart : startLocal
+  const effectiveEnd = endLocal > viewEnd ? viewEnd : endLocal
   
   const visibleDuration = differenceInDays(effectiveEnd, effectiveStart)
   return `col-span-${Math.min(visibleDuration + 1, 7)}`
@@ -395,9 +412,19 @@ const openTodoDetails = (todo) => {
   selectedDate.value = todo
 }
 
+// 切换任务状态
 const toggleTodoStatus = async (todo) => {
-  await todoStore.toggleTodo(todo.id)
-  selectedDate.value = todoStore.todos.find(t => t.id === todo.id)
+  try {
+    await todoStore.toggleTodo(todo.id)
+    // 保存当前选中的日期
+    const currentSelectedDate = new Date(selectedDate.value)
+    // 重新加载数据
+    await todoStore.fetchTodos()
+    // 恢复选中的日期
+    selectedDate.value = currentSelectedDate
+  } catch (error) {
+    console.error('切换任务状态失败:', error)
+  }
 }
 
 const editTodo = (todo) => {
@@ -440,18 +467,26 @@ const toLocalTime = (dateStr) => {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
 }
 
-// 优化关闭对话框的处理函数
+// 修改关闭对话框的处理函数
 const closeDialog = () => {
-  if (isClosing.value) return
-  isClosing.value = true
-  // 使用 nextTick 确保状态更新后再执行动画
+  // 使用 nextTick 确保状态更新和动画同步
   nextTick(() => {
-    setTimeout(() => {
-      selectedDate.value = null
-      isClosing.value = false
-    }, 300) // 增加延迟时间，确保动画完全结束
+    selectedDate.value = null
   })
 }
+
+// 使用计算属性缓存一些频繁计算的值
+const currentViewDates = computed(() => {
+  const viewStart = viewMode.value === 'month' 
+    ? startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
+    : startOfWeek(currentDate.value, { weekStartsOn: 1 })
+  
+  const viewEnd = viewMode.value === 'month'
+    ? endOfWeek(endOfMonth(currentDate.value), { weekStartsOn: 1 })
+    : endOfWeek(currentDate.value, { weekStartsOn: 1 })
+  
+  return { viewStart, viewEnd }
+})
 </script>
 
 <style scoped>
@@ -490,7 +525,7 @@ const closeDialog = () => {
 }
 
 /* 调整日期单元格样式 */
-.min-h-[100px] {
+.date-cell {
   min-height: 110px;
   position: relative;
   display: flex;

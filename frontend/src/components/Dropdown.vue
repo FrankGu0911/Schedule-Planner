@@ -99,7 +99,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选��'
+    default: '请选择'
   }
 })
 

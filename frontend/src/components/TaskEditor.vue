@@ -115,6 +115,29 @@
         </div>
       </div>
 
+      <!-- 智能识别部分 -->
+      <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div class="space-y-4">
+          <textarea
+            v-model="aiInput"
+            rows="3"
+            class="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+            placeholder="粘贴您的任务内容在此，我们将自动识别并整理您的待办事项。例：明天下午3点与团队开会"
+          ></textarea>
+          <div class="flex justify-end">
+            <button
+              type="button"
+              @click="handleAiRecognize"
+              :disabled="aiLoading || !aiInput.trim()"
+              class="px-4 py-2 text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <Icon v-if="aiLoading" icon="ph:circle-notch-bold" class="w-4 h-4 animate-spin" />
+              <span>{{ aiLoading ? '识别中...' : '智能识别' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 按钮组 -->
       <div class="flex justify-end gap-3 pt-4">
         <button
@@ -139,6 +162,10 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
+import axios from 'axios'
+import { useToastStore } from '../stores/toast'
+
+const toastStore = useToastStore()
 
 const props = defineProps({
   task: {
@@ -213,7 +240,7 @@ const handleSubmit = () => {
     const startTime = new Date(formData.value.start_time)
     const endTime = new Date(formData.value.end_time)
     if (endTime < startTime) {
-      alert('结束时间不能早于开始时间')
+      toastStore.show('结束时间不能早于开始时间', 'error')
       return
     }
   }
@@ -287,4 +314,53 @@ defineExpose({
     })
   }
 })
+
+// AI 识别相关
+const aiInput = ref('')
+const aiLoading = ref(false)
+
+// AI 识别处理函数
+const handleAiRecognize = async () => {
+  if (!aiInput.value.trim() || aiLoading.value) return
+
+  aiLoading.value = true
+  try {
+    const response = await axios.post('http://frankgu.club:15050/v1/workflows/run', {
+      inputs: { input: aiInput.value.trim() },
+      response_mode: "blocking",
+      user: "frank"
+    }, {
+      headers: {
+        'Authorization': 'Bearer app-aFzcAUK2Xap71boryALR4Pc5',
+        'Content-Type': 'application/json'
+      }
+    })
+
+    // 解析响应数据
+    if (response.data?.data?.outputs) {
+      const outputs = response.data.data.outputs
+      
+      // 填充表单数据
+      formData.value = {
+        ...formData.value,
+        title: outputs.title || aiInput.value.trim(),
+        description: outputs.description || '',
+        start_time: outputs.start_time ? outputs.start_time.replace(' ', 'T').slice(0, 16) : formData.value.start_time,
+        end_time: outputs.end_time ? outputs.end_time.replace(' ', 'T').slice(0, 16) : formData.value.end_time,
+        is_long_term: outputs.is_long_term === 1,
+        tags: outputs.tags || []
+      }
+
+      // 显示成功提示
+      toastStore.show('已成功识别任务内容', 'success')
+    } else {
+      throw new Error('无效的响应数据')
+    }
+  } catch (error) {
+    console.error('AI recognition error:', error)
+    toastStore.show('识别失败，请重试', 'error')
+  } finally {
+    aiLoading.value = false
+  }
+}
 </script> 
