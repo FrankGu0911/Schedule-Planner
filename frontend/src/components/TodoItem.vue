@@ -96,7 +96,7 @@ defineEmits(['toggle', 'edit', 'delete'])
 const formatDateTime = (utcStr) => {
   if (!utcStr) return ''
   // 将UTC时间字符串转换为本地时间
-  const date = new Date(utcStr.replace(' ', 'T') + 'Z')
+  const date = new Date(utcStr + 'Z')  // 添加Z表示这是UTC时间
   return new Intl.DateTimeFormat('zh-CN', {
     year: 'numeric',
     month: '2-digit',

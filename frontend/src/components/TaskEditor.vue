@@ -82,13 +82,15 @@
           <span
             v-for="tag in formData.tags"
             :key="tag"
-            class="inline-flex items-center px-2 py-1 rounded-md text-sm bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300"
+            class="inline-flex items-center px-2 py-1 rounded-md text-sm"
+            :style="{ backgroundColor: getTagColor(tag).bgColor, color: getTagColor(tag).textColor }"
           >
             {{ tag }}
             <button
               type="button"
               @click="removeTag(tag)"
-              class="ml-1 focus:outline-none hover:text-primary-800 dark:hover:text-primary-200"
+              class="ml-1 focus:outline-none"
+              :style="{ color: getTagColor(tag).textColor }"
             >
               <Icon icon="ph:x-bold" class="w-3 h-3" />
             </button>
@@ -164,6 +166,32 @@ const formData = ref({
 // 新标签输入
 const newTag = ref('')
 
+// 标签颜色映射
+const tagColors = [
+  { bgColor: '#E9F5FE', textColor: '#0369A1' }, // 蓝色
+  { bgColor: '#F0FDF4', textColor: '#166534' }, // 绿色
+  { bgColor: '#FEF3F2', textColor: '#9F1239' }, // 红色
+  { bgColor: '#FDF4FF', textColor: '#86198F' }, // 紫色
+  { bgColor: '#FFF7ED', textColor: '#9A3412' }, // 橙色
+  { bgColor: '#F5F3FF', textColor: '#5B21B6' }, // 靛蓝
+]
+
+// 根据标签文本生成���的颜色
+const getTagColor = (tag) => {
+  const index = Math.abs(hashCode(tag)) % tagColors.length
+  return tagColors[index]
+}
+
+// 简单的字符串哈希函数
+const hashCode = (str) => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash = hash & hash
+  }
+  return hash
+}
+
 // 添加标签
 const addTag = () => {
   const tag = newTag.value.trim()
@@ -190,23 +218,55 @@ const handleSubmit = () => {
     }
   }
 
-  emit('submit', { ...formData.value })
+  // 转换本地时间为UTC格式
+  const localToUTC = (localDateTimeStr) => {
+    if (!localDateTimeStr) return ''
+    const date = new Date(localDateTimeStr)
+    const year = date.getUTCFullYear()
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const hours = String(date.getUTCHours()).padStart(2, '0')
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0')
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  }
+
+  const formattedData = {
+    ...formData.value,
+    start_time: localToUTC(formData.value.start_time),
+    end_time: formData.value.is_long_term ? '' : localToUTC(formData.value.end_time)
+  }
+
+  emit('submit', formattedData)
 }
 
 // 初始化表单数据
 onMounted(() => {
   if (props.task) {
     const { title, description, start_time, end_time, is_long_term, tags } = props.task
+    // 将UTC时间转换为本地时间用于显示
+    const utcToLocal = (utcStr) => {
+      if (!utcStr) return ''
+      // 将UTC时间转换为本地时间，并格式化为datetime-local所需的格式
+      const date = new Date(utcStr + 'Z')
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
+    }
+
     formData.value = {
       title,
       description: description || '',
-      start_time: start_time ? start_time.slice(0, 16) : '',
-      end_time: end_time ? end_time.slice(0, 16) : '',
+      start_time: utcToLocal(start_time),
+      end_time: end_time ? utcToLocal(end_time) : '',
       is_long_term: is_long_term || false,
       tags: tags || []
     }
   } else {
-    // 设置默认开始时间为当前时间
+    // 设置默认开始时间为当前本地时间
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')

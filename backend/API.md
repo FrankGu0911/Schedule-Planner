@@ -340,13 +340,14 @@ Authorization: Bearer {token}
     "title": "完成项目",
     "description": "完成API文档编写",
     "completed": false,
+    "completed_at": null,
     "is_long_term": false,
     "user_id": 1,
     "start_time": "2024-01-01 08:00:00",
     "end_time": "2024-01-02 18:00:00",
     "tags": ["工作", "学习"],
-    "created_at": "2024-01-01T00:00:00Z",
-    "updated_at": "2024-01-01T00:00:00Z"
+    "created_at": "2024-01-01 08:00:00",
+    "updated_at": "2024-01-01 08:00:00"
 }
 ```
 
@@ -479,16 +480,16 @@ Authorization: Bearer {token}
 
 ## 注意事项
 1. 所有需要认证的接口必须在请求头中携带有效的 Token
-2. 待办事项的时间格式统一使用 "YYYY-MM-DD HH:mm:ss"，例如："2024-01-01 08:00:00"
-3. 系统时间（如created_at, updated_at）使用 ISO 8601 标准格式
-4. 所有请求和响应的 Content-Type 均为 application/json
-5. 错误响应会包含具体的错误信息在 error 字段中
-6. 管理员接口仅限于 role 为 "admin" 的用户访问
-7. 新注册用户默认状态为 "inactive"，需要管理员激活后才能使用系统
-8. 待办事项的默认值处理：
+2. 所有时间字段统一使用 "YYYY-MM-DD HH:mm:ss" 格式，例如："2024-01-01 08:00:00"
+3. 所有请求和响应的 Content-Type 均为 application/json
+4. 错误响应会包含具体的错误信息在 error 字段中
+5. 管理员接口仅限于 role 为 "admin" 的用户访问
+6. 新注册用户默认状态为 "inactive"，需要管理员激活后才能使用系统
+7. 待办事项的默认值处理：
    - 开始时间为空时，默认为当前时间
    - 结束时间为空时，默认为开始时间后24小时
    - 是否为长期任务为空时，默认为false
-9. 默认管理员账号：
+   - 完成时间（completed_at）在任务标记为完成时自动设置，取消完成时自动清空
+8. 默认管理员账号：
    - 用户名：admin
    - 密码：123456

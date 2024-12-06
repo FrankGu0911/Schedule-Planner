@@ -27,7 +27,7 @@
 
       <!-- 筛选器和统计 -->
       <div class="mb-4 sm:mb-6 space-y-4">
-        <!-- 第一��：筛选器 -->
+        <!-- 第一��选器 -->
         <div class="flex items-center gap-6">
           <!-- 状态筛选 -->
           <div class="inline-flex items-center gap-2 w-[180px] flex-shrink-0">
@@ -123,11 +123,21 @@
         </div>
       </TransitionGroup>
     </div>
+    <el-dialog
+      v-model="dialogVisible"
+      :title="formatDialogTitle"
+      :before-close="handleDialogClose"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      destroy-on-close
+    >
+      <!-- 对话���内容 -->
+    </el-dialog>
   </MainLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import { useTodoStore } from '../stores/todo'
 import MainLayout from '../components/MainLayout.vue'
@@ -141,6 +151,8 @@ const todoStore = useTodoStore()
 const showTaskEditor = ref(false)
 const editingTodo = ref(null)
 const selectedTags = ref([])
+const dialogVisible = ref(false)
+const currentDate = ref(new Date())
 
 // 计算超时任务数量
 const overdueCount = computed(() => {
@@ -148,7 +160,7 @@ const overdueCount = computed(() => {
   return todoStore.todos.filter(todo => {
     if (todo.completed || todo.is_long_term) return false
     if (!todo.end_time) return false
-    return new Date(todo.end_time) < now
+    return new Date(todo.end_time + 'Z') < now
   }).length
 })
 
@@ -196,6 +208,27 @@ const handleTaskSubmit = async (taskData) => {
 const handleEditTodo = (todo) => {
   editingTodo.value = todo
   showTaskEditor.value = true
+}
+
+// 添加计算属性用于对话框标题
+const formatDialogTitle = computed(() => {
+  if (!dialogVisible) return ''
+  const date = new Date(currentDate.value + 'Z')
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+})
+
+// 处理对话框关闭
+const handleDialogClose = (done) => {
+  dialogVisible.value = false
+  // 使用nextTick确保DOM更新后再重置数据
+  nextTick(() => {
+    currentDate.value = new Date()
+  })
+  done()
 }
 </script>
 
