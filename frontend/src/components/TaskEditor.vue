@@ -329,13 +329,21 @@ onMounted(() => {
 
 const editorRef = ref(null)
 
-// 暴露滚动方法给父组件
+// 添加一个方法来检查是否有未保存的内容
+const hasUnsavedContent = () => {
+  return formData.value.title.trim() !== '' || 
+         formData.value.description.trim() !== '' || 
+         aiInput.value.trim() !== ''
+}
+
+// 暴露方法给父组件
 defineExpose({
   scrollIntoView: () => {
     nextTick(() => {
       editorRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
-  }
+  },
+  hasUnsavedContent
 })
 
 // AI 识别相关

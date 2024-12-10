@@ -86,6 +86,13 @@
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      v-model="showConfirmDialog"
+      title="确认编辑"
+      message="当前有未保存的内容，是否确定要编辑新的任务？"
+      @confirm="handleConfirmEdit"
+    />
   </div>
 </template>
 
@@ -93,9 +100,12 @@
 import { ref, computed } from 'vue'
 import { useTodoStore } from '../stores/todo'
 import Dropdown from './Dropdown.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 
 const todoStore = useTodoStore()
 const selectedTag = ref('')
+const showConfirmDialog = ref(false)
+const pendingEditTodo = ref(null)
 
 const filters = [
   { label: '全部', value: 'all' },
@@ -143,9 +153,11 @@ const hashCode = (str) => {
 }
 
 const editTodo = (todo) => {
-  // 实现编辑功能
-  console.log('Edit todo:', todo)
+  emit('edit', todo)
 }
+
+// 添加 emit 定义
+const emit = defineEmits(['edit'])
 
 // 处理标签筛选
 const handleTagFilter = () => {

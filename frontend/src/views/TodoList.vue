@@ -134,6 +134,14 @@
     >
       <!-- 对话内容 -->
     </el-dialog>
+
+    <!-- 添加确认对话框 -->
+    <ConfirmDialog
+      v-model="showConfirmDialog"
+      title="确认编辑"
+      message="当前有未保存的内容，是否确定要编辑新的任务？"
+      @confirm="handleConfirmEdit"
+    />
   </MainLayout>
 </template>
 
@@ -146,6 +154,7 @@ import TaskEditor from '../components/TaskEditor.vue'
 import TodoItem from '../components/TodoItem.vue'
 import Dropdown from '../components/Dropdown.vue'
 import { useRoute } from 'vue-router'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const route = useRoute()
 const todoStore = useTodoStore()
@@ -155,6 +164,8 @@ const selectedTags = ref([])
 const dialogVisible = ref(false)
 const currentDate = ref(new Date())
 const taskEditorRef = ref(null)
+const showConfirmDialog = ref(false)
+const pendingEditTodo = ref(null)
 
 // 计算超时任务数量
 const overdueCount = computed(() => {
@@ -208,20 +219,53 @@ const handleTaskSubmit = async (taskData) => {
 }
 
 const handleEditTodo = (todo) => {
-  editingTodo.value = todo
-  showTaskEditor.value = true
-  nextTick(() => {
-    const editorElement = taskEditorRef.value?.$el
-    if (editorElement) {
-      const headerHeight = 64
-      const marginTop = 20
-      const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
-      window.scrollTo({
-        top: targetPosition,
-        behavior: 'smooth'
+  // 检查是否有未保存的内容
+  if (showTaskEditor.value && taskEditorRef.value?.hasUnsavedContent()) {
+    pendingEditTodo.value = todo
+    showConfirmDialog.value = true
+  } else {
+    showTaskEditor.value = false // 先关闭编辑器
+    nextTick(() => {
+      editingTodo.value = { ...todo } // 创建一个新的对象来触发响应式更新
+      showTaskEditor.value = true // 然后再打开编辑器
+      nextTick(() => {
+        const editorElement = taskEditorRef.value?.$el
+        if (editorElement) {
+          const headerHeight = 64
+          const marginTop = 20
+          const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          })
+        }
       })
-    }
-  })
+    })
+  }
+}
+
+// 处理确认编辑
+const handleConfirmEdit = () => {
+  if (pendingEditTodo.value) {
+    showTaskEditor.value = false // 先关闭编辑器
+    nextTick(() => {
+      editingTodo.value = { ...pendingEditTodo.value } // 创建一个新的对象来触发响应式更新
+      showTaskEditor.value = true // 然后再打开编辑器
+      pendingEditTodo.value = null
+      nextTick(() => {
+        const editorElement = taskEditorRef.value?.$el
+        if (editorElement) {
+          const headerHeight = 64
+          const marginTop = 20
+          const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          })
+        }
+      })
+    })
+  }
 }
 
 // 添加计算属性用于对话框标题

@@ -206,6 +206,13 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <!-- 确认对话框 -->
+    <ConfirmDialog
+      v-if="showConfirmDialog"
+      @confirm="handleConfirmEdit"
+      @cancel="showConfirmDialog = false"
+    />
   </MainLayout>
 </template>
 
@@ -235,12 +242,17 @@ import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } fro
 import { useTodoStore } from '../stores/todo'
 import MainLayout from '../components/MainLayout.vue'
 import { useRouter } from 'vue-router'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 const router = useRouter()
 const todoStore = useTodoStore()
 const viewMode = ref('month')
 const currentDate = ref(new Date())
 const selectedDate = ref(null)
+
+// 添加对话框相关的状态
+const showConfirmDialog = ref(false)
+const pendingEditTodoId = ref(null)
 
 // 在组件挂载时加载任务数据
 onMounted(async () => {
@@ -363,7 +375,7 @@ const formatDateRange = (start, end) => {
   return `${format(start, 'yyyy年M月d日', { locale: zhCN })} - ${format(end, 'M月d日', { locale: zhCN })}`
 }
 
-// ��式化日期时间范围
+// 格式化日期时间范围
 const formatDateTimeRange = (start, end) => {
   const localStart = toLocalTime(start)
   const localEnd = toLocalTime(end)
@@ -393,7 +405,7 @@ const getDurationClass = (todo) => {
     return 'col-span-1'
   }
   
-  // 计算任务在当前视图中应该越的列数
+  // ���算任务在当前视图中应该越的列数
   const viewStart = viewMode.value === 'month' 
     ? startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
     : startOfWeek(currentDate.value, { weekStartsOn: 1 })
@@ -431,8 +443,27 @@ const toggleTodoStatus = async (todo) => {
 }
 
 const editTodo = (todo) => {
-  selectedDate.value = null
-  router.push('/?edit=' + todo.id)
+  // 检查是否有未保存的内容
+  if (taskEditorRef.value?.hasUnsavedContent()) {
+    pendingEditTodoId.value = todo.id
+    showConfirmDialog.value = true
+  } else {
+    selectedDate.value = null
+    nextTick(() => {
+      router.push('/?edit=' + todo.id)
+    })
+  }
+}
+
+// 处理确认编辑
+const handleConfirmEdit = () => {
+  if (pendingEditTodoId.value) {
+    selectedDate.value = null
+    nextTick(() => {
+      router.push('/?edit=' + pendingEditTodoId.value)
+      pendingEditTodoId.value = null
+    })
+  }
 }
 
 const deleteTodo = async (todo) => {
