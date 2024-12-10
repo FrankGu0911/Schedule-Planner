@@ -62,7 +62,7 @@ export const useTodoStore = defineStore('todo', {
           result = result.filter(todo => {
             if (todo.completed || todo.is_long_term) return false;
             if (!todo.end_time) return false;
-            return new Date(todo.end_time) < now;
+            return new Date(todo.end_time + 'Z') < now;
           });
           break;
       }
@@ -77,14 +77,65 @@ export const useTodoStore = defineStore('todo', {
           )
         );
       }
-
-      // 排序：未完成在前，已完成在后
-      return result.sort((a, b) => {
-        if (a.completed !== b.completed) {
-          return a.completed ? 1 : -1;
-        }
-        return new Date(b.created_at) - new Date(a.created_at);
+      
+      // 对任务进行分类
+      const overdueTasks = result.filter(todo => {
+        const endTime = todo.end_time ? new Date(todo.end_time + 'Z') : null;
+        return !todo.completed && !todo.is_long_term && endTime && endTime < now;
       });
+
+      const inProgressTasks = result.filter(todo => {
+        const startTime = todo.start_time ? new Date(todo.start_time + 'Z') : null;
+        const endTime = todo.end_time ? new Date(todo.end_time + 'Z') : null;
+        return !todo.completed && !todo.is_long_term && startTime && startTime <= now && (!endTime || endTime >= now);
+      });
+
+      const longTermTasks = result.filter(todo => 
+        !todo.completed && todo.is_long_term
+      );
+
+      const notStartedTasks = result.filter(todo => {
+        const startTime = todo.start_time ? new Date(todo.start_time + 'Z') : null;
+        return !todo.completed && !todo.is_long_term && startTime && startTime > now;
+      });
+
+      const completedTasks = result.filter(todo => todo.completed);
+
+      // 输出调试信息
+      console.group('任务分类');
+      console.log('已超时的任务:', overdueTasks.map(t => ({ 
+        title: t.title, 
+        end_time: t.end_time 
+      })));
+      console.log('已开始未结束的任务:', inProgressTasks.map(t => ({ 
+        title: t.title, 
+        start_time: t.start_time,
+        end_time: t.end_time 
+      })));
+      console.log('长期任务:', longTermTasks.map(t => ({ 
+        title: t.title,
+        created_at: t.created_at 
+      })));
+      console.log('未开始的任务:', notStartedTasks.map(t => ({ 
+        title: t.title,
+        start_time: t.start_time 
+      })));
+      console.log('已完成的任务:', completedTasks.map(t => ({ 
+        title: t.title,
+        updated_at: t.updated_at 
+      })));
+      console.groupEnd();
+
+      // 按指定顺序合并所有任务
+      const sortedResult = [
+        ...overdueTasks.sort((a, b) => new Date(a.end_time + 'Z') - new Date(b.end_time + 'Z')),
+        ...inProgressTasks.sort((a, b) => new Date(a.end_time + 'Z') - new Date(b.end_time + 'Z')),
+        ...longTermTasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+        ...notStartedTasks.sort((a, b) => new Date(a.start_time + 'Z') - new Date(b.start_time + 'Z')),
+        ...completedTasks.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      ];
+
+      return sortedResult;
     },
 
     // 获取所有可用的标签

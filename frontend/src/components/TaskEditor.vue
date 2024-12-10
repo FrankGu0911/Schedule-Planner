@@ -24,8 +24,9 @@
         <textarea
           id="description"
           v-model="formData.description"
-          rows="3"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+          @input="autoResize"
+          ref="descriptionTextarea"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white min-h-[80px] overflow-hidden resize-none"
           placeholder="请输入任务描述（可选）"
         ></textarea>
       </div>
@@ -160,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import { API_CONFIG } from '../config/env'
@@ -391,4 +392,28 @@ const handleAIRecognition = async () => {
     aiLoading.value = false
   }
 }
+
+const descriptionTextarea = ref(null)
+
+const autoResize = () => {
+  const textarea = descriptionTextarea.value
+  if (textarea) {
+    textarea.style.height = 'auto'
+    textarea.style.height = textarea.scrollHeight + 'px'
+  }
+}
+
+// 在组件挂载时初始化高度
+onMounted(() => {
+  nextTick(() => {
+    autoResize()
+  })
+})
+
+// 在表单数据更新时重新计算高度
+watch(() => formData.value.description, () => {
+  nextTick(() => {
+    autoResize()
+  })
+})
 </script>
