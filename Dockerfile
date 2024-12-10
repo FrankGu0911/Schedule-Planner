@@ -22,6 +22,8 @@ WORKDIR /app
 # 复制 Nginx 配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
+RUN sed -i 's|http://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories
+
 # 复制后端二进制文件
 COPY --from=backend-builder /app/backend/main .
 # COPY --from=backend-builder /app/backend/todo.db ./todo.db
