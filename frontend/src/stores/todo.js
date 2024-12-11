@@ -77,12 +77,25 @@ export const useTodoStore = defineStore('todo', {
           )
         );
       }
+
+      const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      
+      // 添加任务状态标记
+      result = result.map(todo => {
+        const startTime = todo.start_time ? new Date(todo.start_time + 'Z') : null;
+        const endTime = todo.end_time ? new Date(todo.end_time + 'Z') : null;
+        const isStarted = startTime && startTime <= now;
+        
+        return {
+          ...todo,
+          isOverdue: !todo.completed && !todo.is_long_term && endTime && endTime < now,
+          isEndingSoon: !todo.completed && !todo.is_long_term && isStarted && endTime && endTime > now && endTime <= next24h,
+          isStartingSoon: !todo.completed && !todo.is_long_term && startTime && startTime > now && startTime <= next24h
+        };
+      });
       
       // 对任务进行分类
-      const overdueTasks = result.filter(todo => {
-        const endTime = todo.end_time ? new Date(todo.end_time + 'Z') : null;
-        return !todo.completed && !todo.is_long_term && endTime && endTime < now;
-      });
+      const overdueTasks = result.filter(todo => todo.isOverdue);
 
       const inProgressTasks = result.filter(todo => {
         const startTime = todo.start_time ? new Date(todo.start_time + 'Z') : null;
@@ -90,13 +103,15 @@ export const useTodoStore = defineStore('todo', {
         return !todo.completed && !todo.is_long_term && startTime && startTime <= now && (!endTime || endTime >= now);
       });
 
+      const upcomingTasks = result.filter(todo => todo.isStartingSoon);
+
       const longTermTasks = result.filter(todo => 
         !todo.completed && todo.is_long_term
       );
 
       const notStartedTasks = result.filter(todo => {
         const startTime = todo.start_time ? new Date(todo.start_time + 'Z') : null;
-        return !todo.completed && !todo.is_long_term && startTime && startTime > now;
+        return !todo.completed && !todo.is_long_term && startTime && startTime > next24h;
       });
 
       const completedTasks = result.filter(todo => todo.completed);
@@ -110,7 +125,12 @@ export const useTodoStore = defineStore('todo', {
       console.log('已开始未结束的任务:', inProgressTasks.map(t => ({ 
         title: t.title, 
         start_time: t.start_time,
-        end_time: t.end_time 
+        end_time: t.end_time,
+        isEndingSoon: t.isEndingSoon
+      })));
+      console.log('即将开始的任务:', upcomingTasks.map(t => ({ 
+        title: t.title,
+        start_time: t.start_time 
       })));
       console.log('长期任务:', longTermTasks.map(t => ({ 
         title: t.title,
@@ -130,7 +150,8 @@ export const useTodoStore = defineStore('todo', {
       const sortedResult = [
         ...overdueTasks.sort((a, b) => new Date(a.end_time + 'Z') - new Date(b.end_time + 'Z')),
         ...inProgressTasks.sort((a, b) => new Date(a.end_time + 'Z') - new Date(b.end_time + 'Z')),
-        ...longTermTasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+        ...upcomingTasks.sort((a, b) => new Date(a.start_time + 'Z') - new Date(b.start_time + 'Z')),
+        ...longTermTasks.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)),
         ...notStartedTasks.sort((a, b) => new Date(a.start_time + 'Z') - new Date(b.start_time + 'Z')),
         ...completedTasks.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
       ];
@@ -180,7 +201,7 @@ export const useTodoStore = defineStore('todo', {
         this.currentUserId = null;
       } catch (error) {
         console.error('Fetch todos error:', error);
-        this.error = error.response?.data?.error || '获取待办事项失败';
+        this.error = error.response?.data?.error || '获取待办��项失败';
       } finally {
         this.loading = false;
       }

@@ -63,7 +63,7 @@
               <div>用户名</div>
               <div>角色</div>
               <div>状态</div>
-              <div>创建时间</div>
+              <div>最后活跃</div>
               <div class="col-span-2">操作</div>
             </div>
           </div>
@@ -110,7 +110,7 @@
                 </span>
               </div>
               <div class="text-gray-500 dark:text-gray-400">
-                {{ formatDate(user.created_at) }}
+                {{ formatDate(user.last_active ? user.last_active + 'Z' : null) }}
               </div>
               <div class="col-span-2 flex items-center space-x-2">
                 <template v-if="user.status === 'inactive'">
@@ -175,7 +175,7 @@
           </div>
         </div>
 
-        <!-- ��端卡片列表 -->
+        <!-- 移动端卡片列表 -->
         <div class="lg:hidden divide-y divide-gray-200 dark:divide-gray-700">
           <div
             v-for="user in filteredUsers"
@@ -221,7 +221,7 @@
                 }}
               </span>
               <span class="text-gray-500 dark:text-gray-400">
-                {{ formatDate(user.created_at) }}
+                {{ formatDate(user.last_active ? user.last_active + 'Z' : null) }}
               </span>
             </div>
 
@@ -375,7 +375,13 @@ const userCount = computed(() =>
 
 // 格式化日期
 const formatDate = (date) => {
-  return format(new Date(date), 'yyyy-MM-dd HH:mm')
+  if (!date) return '从未活跃';
+  try {
+    return format(new Date(date), 'yyyy-MM-dd HH:mm');
+  } catch (error) {
+    console.error('Invalid date:', date);
+    return '无效时间';
+  }
 }
 
 // 用户管理操作

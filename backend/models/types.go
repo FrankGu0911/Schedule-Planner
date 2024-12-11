@@ -22,7 +22,7 @@ func (t CustomTime) MarshalJSON() ([]byte, error) {
     if t.Time.IsZero() {
         return []byte("null"), nil
     }
-    formatted := t.Time.Format(TimeFormat)
+    formatted := t.Time.UTC().Format(TimeFormat)
     return []byte(`"` + formatted + `"`), nil
 }
 
@@ -38,11 +38,11 @@ func (t *CustomTime) UnmarshalJSON(data []byte) error {
         t.Time = time.Time{}
         return nil
     }
-    parsed, err := time.ParseInLocation(TimeFormat, str, time.Local)
+    parsed, err := time.Parse(TimeFormat, str)
     if err != nil {
         return err
     }
-    t.Time = parsed
+    t.Time = parsed.UTC()
     return nil
 }
 

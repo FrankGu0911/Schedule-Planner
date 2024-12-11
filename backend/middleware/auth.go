@@ -21,6 +21,7 @@ func GenerateToken(userID uint) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().AddDate(100, 0, 0).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
 	}
@@ -70,6 +71,14 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// 更新用户最后活跃时间
+		now := time.Now().UTC()
+		if err := database.DB.Model(&user).Update("last_active", now).Error; err != nil {
+			// 即使更新失败也继续处理请求，只是记录不会更新
+			// 这里可以添加日志记录
+		}
+		user.LastActive = models.CustomTime{Time: now}
 
 		c.Set("userID", claims.UserID)
 		c.Set("user", &user)

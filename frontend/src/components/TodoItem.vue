@@ -1,5 +1,12 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+  <div 
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+    :class="{
+      'border-l-4 border-red-500 dark:border-red-400': todo.isOverdue,
+      'border-l-4 border-yellow-500 dark:border-yellow-400': todo.isEndingSoon,
+      'border-l-4 border-blue-500 dark:border-blue-400': todo.isStartingSoon
+    }"
+  >
     <div class="p-4 flex">
       <!-- 勾选框 -->
       <div class="flex-shrink-0 self-start sm:self-center mr-3 sm:mr-4 mt-1 sm:mt-0">
@@ -20,12 +27,26 @@
       <div class="flex-grow min-w-0">
         <!-- 标题和操作按钮 -->
         <div class="flex items-start justify-between gap-2 mb-2">
-          <h3 
-            class="text-base sm:text-lg font-medium break-words"
-            :class="{ 'line-through text-gray-500 dark:text-gray-400': todo.completed }"
-          >
-            {{ todo.title }}
-          </h3>
+          <div>
+            <h3 
+              class="text-base sm:text-lg font-medium break-words"
+              :class="{ 'line-through text-gray-500 dark:text-gray-400': todo.completed }"
+            >
+              {{ todo.title }}
+            </h3>
+            <!-- 状态标签 -->
+            <div class="mt-1 flex gap-2">
+              <span v-if="todo.isOverdue" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                已超时
+              </span>
+              <span v-else-if="todo.isEndingSoon" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                即将结束
+              </span>
+              <span v-else-if="todo.isStartingSoon" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                即将开始
+              </span>
+            </div>
+          </div>
           <!-- 操作按钮 -->
           <div class="flex-shrink-0 flex space-x-1">
             <button

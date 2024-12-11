@@ -19,6 +19,7 @@ type User struct {
     Password  string     `json:"-" gorm:"not null"`  // json:"-" 确保密码不会在JSON响应中返回
     Role      string     `json:"role" gorm:"type:varchar(10);default:'user'"`
     Status    string     `json:"status" gorm:"type:varchar(10);default:'inactive'"`
+    LastActive CustomTime `json:"last_active"`
     Todos     []Todo     `json:"todos"`
     CreatedAt CustomTime `json:"created_at"`
     UpdatedAt CustomTime `json:"updated_at"`
