@@ -2,7 +2,7 @@
 FROM node:lts-alpine3.20 as frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm install --registry=https://registry.npmmirror.com
 COPY frontend/ .
 RUN npm run build
 
@@ -22,7 +22,7 @@ WORKDIR /app
 # 复制 Nginx 配置
 COPY nginx.conf /etc/nginx/nginx.conf
 
-RUN sed -i 's|http://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 复制后端二进制文件
 COPY --from=backend-builder /app/backend/main .
