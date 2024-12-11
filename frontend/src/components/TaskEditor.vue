@@ -3,16 +3,15 @@
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <!-- 标题输入 -->
       <div>
-        <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           标题
         </label>
         <input
-          id="title"
           v-model="formData.title"
           type="text"
           required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-          placeholder="请输入任务标题"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          placeholder="输入任务标题"
         />
       </div>
 
@@ -29,6 +28,19 @@
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white min-h-[80px] overflow-hidden resize-none"
           placeholder="请输入任务描述（可选）"
         ></textarea>
+      </div>
+
+      <!-- 长期任务选项 -->
+      <div class="flex items-center">
+        <input
+          id="is_long_term"
+          v-model="formData.is_long_term"
+          type="checkbox"
+          class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+        />
+        <label for="is_long_term" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+          这是一个长期任务（无结束时间）
+        </label>
       </div>
 
       <!-- 时间设置 -->
@@ -59,19 +71,6 @@
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 dark:disabled:bg-gray-600 dark:bg-gray-700 dark:text-white"
           />
         </div>
-      </div>
-
-      <!-- 长期任务选项 -->
-      <div class="flex items-center">
-        <input
-          id="is_long_term"
-          v-model="formData.is_long_term"
-          type="checkbox"
-          class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-        />
-        <label for="is_long_term" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-          这是一个长期任务（无结束时间）
-        </label>
       </div>
 
       <!-- 标签输入 -->
@@ -161,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import { API_CONFIG } from '../config/env'
@@ -212,6 +211,71 @@ const formData = ref({
   end_time: '',
   is_long_term: false,
   tags: []
+})
+
+// 初始化表单数据
+const initializeForm = () => {
+  if (props.task) {
+    const { title, description, start_time, end_time, is_long_term, is_starred, tags } = props.task
+    // 将UTC时间转换为本地时间用于显示
+    const utcToLocal = (utcStr) => {
+      if (!utcStr) return ''
+      // 将UTC时间转换为本地时间，并格式化为datetime-local所需的格式
+      const date = new Date(utcStr + 'Z')
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      return `${year}-${month}-${day}T${hours}:${minutes}`
+    }
+
+    formData.value = {
+      title: title || '',
+      description: description || '',
+      start_time: utcToLocal(start_time),
+      end_time: end_time ? utcToLocal(end_time) : '',
+      is_long_term: is_long_term || false,
+      tags: tags || []
+    }
+  } else {
+    // 设置默认开始时间为当前本地时间
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    formData.value = {
+      title: '',
+      description: '',
+      start_time: `${year}-${month}-${day}T${hours}:${minutes}`,
+      end_time: '',
+      is_long_term: false,
+      tags: []
+    }
+  }
+}
+
+// 监听 task 属性变化
+watch(() => props.task, (newTask) => {
+  if (newTask || newTask === null) {
+    nextTick(() => {
+      initializeForm()
+    })
+  }
+}, { immediate: true })
+
+// 组件卸载前清理
+onBeforeUnmount(() => {
+  formData.value = {
+    title: '',
+    description: '',
+    start_time: '',
+    end_time: '',
+    is_long_term: false,
+    tags: []
+  }
 })
 
 // 新标签输入
@@ -285,53 +349,18 @@ const handleSubmit = () => {
   const formattedData = {
     ...formData.value,
     start_time: localToUTC(formData.value.start_time),
-    end_time: formData.value.is_long_term ? '' : localToUTC(formData.value.end_time)
+    end_time: formData.value.is_long_term ? '' : localToUTC(formData.value.end_time),
+    is_starred: props.task?.is_starred || false
   }
 
   emit('submit', formattedData)
 }
 
-// 初始化表单数据
-onMounted(() => {
-  if (props.task) {
-    const { title, description, start_time, end_time, is_long_term, tags } = props.task
-    // 将UTC时间转换为本地时间用于显示
-    const utcToLocal = (utcStr) => {
-      if (!utcStr) return ''
-      // 将UTC时间转换为本地时间，并格式化为datetime-local所需的格式
-      const date = new Date(utcStr + 'Z')
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const hours = String(date.getHours()).padStart(2, '0')
-      const minutes = String(date.getMinutes()).padStart(2, '0')
-      return `${year}-${month}-${day}T${hours}:${minutes}`
-    }
-
-    formData.value = {
-      title,
-      description: description || '',
-      start_time: utcToLocal(start_time),
-      end_time: end_time ? utcToLocal(end_time) : '',
-      is_long_term: is_long_term || false,
-      tags: tags || []
-    }
-  } else {
-    // 设置默认开始时间为当前本地时间
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const hours = String(now.getHours()).padStart(2, '0')
-    const minutes = String(now.getMinutes()).padStart(2, '0')
-    formData.value.start_time = `${year}-${month}-${day}T${hours}:${minutes}`
-  }
-})
-
 const editorRef = ref(null)
 
 // 添加一个方法来检查是否有未保存的内容
 const hasUnsavedContent = () => {
+  if (!formData.value) return false
   return formData.value.title.trim() !== '' || 
          formData.value.description.trim() !== '' || 
          aiInput.value.trim() !== ''
@@ -403,7 +432,7 @@ const autoResize = () => {
   }
 }
 
-// 在组件挂载时初始化高度
+// 组件挂载时初始化高度
 onMounted(() => {
   nextTick(() => {
     autoResize()

@@ -405,7 +405,7 @@ const getDurationClass = (todo) => {
     return 'col-span-1'
   }
   
-  // ���算任务在当前视图中应该越的列数
+  // 计算任务在当前视图中应该越的列数
   const viewStart = viewMode.value === 'month' 
     ? startOfWeek(startOfMonth(currentDate.value), { weekStartsOn: 1 })
     : startOfWeek(currentDate.value, { weekStartsOn: 1 })

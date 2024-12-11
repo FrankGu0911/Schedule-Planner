@@ -59,6 +59,11 @@ func GetTodos(c *gin.Context) {
 		query = query.Where("is_long_term = ?", isLongTerm == "true")
 	}
 
+	// 星标任务筛选
+	if isStarred := c.Query("is_starred"); isStarred != "" {
+		query = query.Where("is_starred = ?", isStarred == "true")
+	}
+
 	if err := query.Find(&todos).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取待办事项失败"})
 		return

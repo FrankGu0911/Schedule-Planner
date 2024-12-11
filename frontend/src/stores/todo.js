@@ -29,8 +29,8 @@ const API_ENDPOINTS = {
 export const useTodoStore = defineStore('todo', {
   state: () => ({
     todos: [],
-    filter: 'all', // 'all' | 'active' | 'completed' | 'overdue'
-    tagFilter: [], // 标签筛选（数组支持多选）
+    filter: 'all', // all, active, completed, overdue, starred
+    tagFilter: [], // 标签筛选
     loading: false,
     error: null,
     currentUserId: null
@@ -38,19 +38,9 @@ export const useTodoStore = defineStore('todo', {
 
   getters: {
     filteredTodos() {
-      const now = new Date();
-      const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-      
-      // 过滤掉超过7天的已完成项
-      let result = this.todos.filter(todo => {
-        if (todo.completed) {
-          const updatedDate = new Date(todo.updated_at);
-          return updatedDate >= sevenDaysAgo;
-        }
-        return true;
-      });
+      let result = [...this.todos];
 
-      // 根据状态筛选
+      // 状态筛选
       switch (this.filter) {
         case 'active':
           result = result.filter(todo => !todo.completed);
@@ -60,10 +50,12 @@ export const useTodoStore = defineStore('todo', {
           break;
         case 'overdue':
           result = result.filter(todo => {
-            if (todo.completed || todo.is_long_term) return false;
-            if (!todo.end_time) return false;
-            return new Date(todo.end_time + 'Z') < now;
+            if (todo.completed || todo.is_long_term || !todo.end_time) return false;
+            return new Date(todo.end_time + 'Z') < new Date();
           });
+          break;
+        case 'starred':
+          result = result.filter(todo => todo.is_starred);
           break;
       }
 
@@ -78,6 +70,7 @@ export const useTodoStore = defineStore('todo', {
         );
       }
 
+      const now = new Date();
       const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       
       // 添加任务状态标记
@@ -115,36 +108,6 @@ export const useTodoStore = defineStore('todo', {
       });
 
       const completedTasks = result.filter(todo => todo.completed);
-
-      // 输出调试信息
-      console.group('任务分类');
-      console.log('已超时的任务:', overdueTasks.map(t => ({ 
-        title: t.title, 
-        end_time: t.end_time 
-      })));
-      console.log('已开始未结束的任务:', inProgressTasks.map(t => ({ 
-        title: t.title, 
-        start_time: t.start_time,
-        end_time: t.end_time,
-        isEndingSoon: t.isEndingSoon
-      })));
-      console.log('即将开始的任务:', upcomingTasks.map(t => ({ 
-        title: t.title,
-        start_time: t.start_time 
-      })));
-      console.log('长期任务:', longTermTasks.map(t => ({ 
-        title: t.title,
-        created_at: t.created_at 
-      })));
-      console.log('未开始的任务:', notStartedTasks.map(t => ({ 
-        title: t.title,
-        start_time: t.start_time 
-      })));
-      console.log('已完成的任务:', completedTasks.map(t => ({ 
-        title: t.title,
-        updated_at: t.updated_at 
-      })));
-      console.groupEnd();
 
       // 按指定顺序合并所有任务
       const sortedResult = [
@@ -201,7 +164,7 @@ export const useTodoStore = defineStore('todo', {
         this.currentUserId = null;
       } catch (error) {
         console.error('Fetch todos error:', error);
-        this.error = error.response?.data?.error || '获取待办��项失败';
+        this.error = error.response?.data?.error || '获取待办事项失败';
       } finally {
         this.loading = false;
       }
@@ -221,24 +184,22 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    async addTodo(taskData, userId = null) {
+    async addTodo(todoData, userId = null) {
+      this.loading = true;
       try {
-        const endpoint = userId 
-          ? `${API_ENDPOINTS.USER_TODOS}/${userId}/todos`
-          : API_ENDPOINTS.TODOS;
-        
-        const response = await api.post(endpoint, { 
-          title: taskData.title,
-          description: taskData.description || '',
-          is_long_term: taskData.is_long_term ? 1 : 0,
-          start_time: taskData.start_time,
-          end_time: taskData.end_time,
-          tags: taskData.tags
+        const endpoint = userId ? `${API_ENDPOINTS.USER_TODOS}/${userId}/todos` : API_ENDPOINTS.TODOS;
+        const response = await api.post(endpoint, {
+          ...todoData,
+          is_starred: todoData.is_starred || false
         });
         this.todos.push(response.data);
+        return response.data;
       } catch (error) {
         console.error('Add todo error:', error);
         this.error = error.response?.data?.error || '添加待办事项失败';
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -263,29 +224,21 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    async updateTodo(id, taskData) {
-      const todo = this.todos.find(t => t.id === id);
-      if (!todo) return;
-
+    async updateTodo(id, todoData) {
+      this.loading = true;
       try {
-        const endpoint = this.currentUserId
-          ? `${API_ENDPOINTS.USER_TODOS}/${this.currentUserId}/todos/${id}`
-          : `${API_ENDPOINTS.TODOS}/${id}`;
-
-        const response = await api.put(endpoint, {
-          title: taskData.title,
-          description: taskData.description || '',
-          is_long_term: taskData.is_long_term ? 1 : 0,
-          start_time: taskData.start_time,
-          end_time: taskData.end_time,
-          tags: taskData.tags,
-          completed: taskData.completed !== undefined ? taskData.completed : todo.completed
-        });
-        const index = this.todos.findIndex(t => t.id === id);
-        this.todos[index] = response.data;
+        const response = await api.put(`${API_ENDPOINTS.TODOS}/${id}`, todoData);
+        const index = this.todos.findIndex(todo => todo.id === id);
+        if (index !== -1) {
+          this.todos[index] = response.data;
+        }
+        return response.data;
       } catch (error) {
         console.error('Update todo error:', error);
         this.error = error.response?.data?.error || '更新待办事项失败';
+        throw error;
+      } finally {
+        this.loading = false;
       }
     },
 
@@ -300,6 +253,26 @@ export const useTodoStore = defineStore('todo', {
       } catch (error) {
         console.error('Delete todo error:', error);
         this.error = error.response?.data?.error || '删除待办事项失败';
+      }
+    },
+
+    async toggleStarred(id) {
+      const todo = this.todos.find(t => t.id === id);
+      if (!todo) return;
+      
+      try {
+        const response = await api.put(`${API_ENDPOINTS.TODOS}/${id}`, {
+          is_starred: !todo.is_starred
+        });
+        const index = this.todos.findIndex(t => t.id === id);
+        if (index !== -1) {
+          this.todos[index] = response.data;
+        }
+        return response.data;
+      } catch (error) {
+        console.error('Toggle starred error:', error);
+        this.error = error.response?.data?.error || '更新星标状态失败';
+        throw error;
       }
     },
 

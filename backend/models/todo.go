@@ -11,6 +11,7 @@ type Todo struct {
     Completed   bool        `json:"completed" gorm:"default:false"`
     CompletedAt *CustomTime `json:"completed_at,omitempty" gorm:"type:datetime"`
     IsLongTerm  bool        `json:"is_long_term" gorm:"default:false"`
+    IsStarred   bool        `json:"is_starred" gorm:"default:false"`
     UserID      uint        `json:"user_id" gorm:"not null"`
     StartTime   CustomTime  `json:"start_time" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
     EndTime     *CustomTime `json:"end_time,omitempty" gorm:"type:datetime"`
@@ -26,7 +27,7 @@ func (t *Todo) BeforeCreate() error {
         t.StartTime = CustomTime{time.Now()}
     }
     
-    // 如果不��长期任务且结束时间为空，设置为开始时间后24小时
+    // 如果不长期任务且结束时间为空，设置为开始时间后24小时
     if !t.IsLongTerm && t.EndTime == nil {
         endTime := CustomTime{t.StartTime.Add(24 * time.Hour)}
         t.EndTime = &endTime
@@ -64,6 +65,7 @@ type CreateTodoRequest struct {
     Title       string      `json:"title" binding:"required"`
     Description string      `json:"description"`
     IsLongTerm  *CustomBool `json:"is_long_term,omitempty"`
+    IsStarred   *CustomBool `json:"is_starred,omitempty"`
     StartTime   *CustomTime `json:"start_time,omitempty"`
     EndTime     *CustomTime `json:"end_time,omitempty"`
     Tags        []string    `json:"tags"`
@@ -81,6 +83,11 @@ func (r *CreateTodoRequest) ToTodo(userID uint) *Todo {
     // 设置是否为长期任务的默认值
     if r.IsLongTerm != nil {
         todo.IsLongTerm = bool(*r.IsLongTerm)
+    }
+
+    // 设置是否为星标任务的默认值
+    if r.IsStarred != nil {
+        todo.IsStarred = bool(*r.IsStarred)
     }
 
     // 设置开始时间
@@ -101,6 +108,7 @@ type UpdateTodoRequest struct {
     Description string      `json:"description"`
     Completed   *bool       `json:"completed,omitempty"`
     IsLongTerm  *CustomBool `json:"is_long_term,omitempty"`
+    IsStarred   *CustomBool `json:"is_starred,omitempty"`
     StartTime   *CustomTime `json:"start_time,omitempty"`
     EndTime     *CustomTime `json:"end_time,omitempty"`
     Tags        []string    `json:"tags"`
@@ -119,6 +127,9 @@ func (r *UpdateTodoRequest) UpdateTodo(todo *Todo) {
     }
     if r.IsLongTerm != nil {
         todo.IsLongTerm = bool(*r.IsLongTerm)
+    }
+    if r.IsStarred != nil {
+        todo.IsStarred = bool(*r.IsStarred)
     }
     if r.StartTime != nil {
         todo.StartTime = *r.StartTime

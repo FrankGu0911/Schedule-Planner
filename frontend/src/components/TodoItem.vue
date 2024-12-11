@@ -28,12 +28,25 @@
         <!-- 标题和操作按钮 -->
         <div class="flex items-start justify-between gap-2 mb-2">
           <div>
-            <h3 
-              class="text-base sm:text-lg font-medium break-words"
-              :class="{ 'line-through text-gray-500 dark:text-gray-400': todo.completed }"
-            >
-              {{ todo.title }}
-            </h3>
+            <div class="flex items-center gap-2">
+              <h3 
+                class="text-base sm:text-lg font-medium break-words"
+                :class="{ 'line-through text-gray-500 dark:text-gray-400': todo.completed }"
+              >
+                {{ todo.title }}
+              </h3>
+              <!-- 星标图标 -->
+              <button
+                @click="$emit('toggleStar')"
+                class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <Icon
+                  :icon="todo.is_starred ? 'ph:star-fill' : 'ph:star'"
+                  class="w-5 h-5"
+                  :class="todo.is_starred ? 'text-yellow-500' : 'text-gray-400 dark:text-gray-500'"
+                />
+              </button>
+            </div>
             <!-- 状态标签 -->
             <div class="mt-1 flex gap-2">
               <span v-if="todo.isOverdue" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
@@ -111,7 +124,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['toggle', 'edit', 'delete'])
+defineEmits(['toggle', 'edit', 'delete', 'toggleStar'])
 
 // 格式化日期时间（UTC转本地时间）
 const formatDateTime = (utcStr) => {

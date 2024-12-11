@@ -13,17 +13,16 @@
         </button>
 
         <!-- 任务编辑器 -->
-        <TaskEditor
-          v-else
-          ref="taskEditorRef"
-          :task="editingTodo"
-          :loading="todoStore.loading"
-          @submit="handleTaskSubmit"
-          @cancel="() => {
-            showTaskEditor = false
-            editingTodo = null
-          }"
-        />
+        <Transition name="fade">
+          <TaskEditor
+            v-if="showTaskEditor"
+            ref="taskEditorRef"
+            :task="editingTodo"
+            :loading="todoStore.loading"
+            @submit="handleTaskSubmit"
+            @cancel="handleEditorCancel"
+          />
+        </Transition>
       </div>
 
       <!-- 筛选器和统计 -->
@@ -31,15 +30,12 @@
         <!-- 第一行：筛选器 -->
         <div class="flex items-center gap-6">
           <!-- 状态筛选 -->
-          <div class="inline-flex items-center gap-2 w-[180px] flex-shrink-0">
-            <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">状态：</span>
-            <div class="flex-1">
-              <Dropdown
-                v-model="todoStore.filter"
-                :options="statusOptions"
-                placeholder="选择状态"
-              />
-            </div>
+          <div class="w-[180px] flex-shrink-0">
+            <Dropdown
+              v-model="todoStore.filter"
+              :options="statusOptions"
+              placeholder="选择状态"
+            />
           </div>
 
           <!-- 标签筛选 -->
@@ -103,6 +99,7 @@
           @toggle="todoStore.toggleTodo(todo.id)"
           @edit="handleEditTodo(todo)"
           @delete="todoStore.deleteTodo(todo.id)"
+          @toggle-star="todoStore.toggleStarred(todo.id)"
         />
 
         <!-- 空状态 -->
@@ -115,10 +112,11 @@
             class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 dark:text-gray-600"
           />
           <p class="mt-4 text-sm sm:text-base text-gray-500 dark:text-gray-400">
-            {{ todoStore.filter === 'all' ? '开始添加您的第个任务吧' :
+            {{ todoStore.filter === 'all' ? '开始添加您的第一个任务吧' :
                todoStore.filter === 'active' ? '没有进行中的任务' :
                todoStore.filter === 'completed' ? '没有已完成的任务' :
                todoStore.filter === 'overdue' ? '没有已超时的任务' :
+               todoStore.filter === 'starred' ? '没有星标任务' :
                '没有符合条件的任务' }}
           </p>
         </div>
@@ -182,7 +180,8 @@ const statusOptions = computed(() => [
   { label: '全部', value: 'all' },
   { label: '进行中', value: 'active' },
   { label: '已完成', value: 'completed' },
-  { label: `已超时 (${overdueCount.value})`, value: 'overdue' }
+  { label: `已超时 (${overdueCount.value})`, value: 'overdue' },
+  { label: '星标任务', value: 'starred' }
 ])
 
 // 标签选项
@@ -208,14 +207,20 @@ onMounted(() => {
 })
 
 const handleTaskSubmit = async (taskData) => {
-  const userId = route.query.userId
   if (editingTodo.value) {
     await todoStore.updateTodo(editingTodo.value.id, taskData)
     editingTodo.value = null
   } else {
-    await todoStore.addTodo(taskData, userId)
+    await todoStore.addTodo(taskData)
   }
   showTaskEditor.value = false
+}
+
+const handleEditorCancel = () => {
+  showTaskEditor.value = false
+  nextTick(() => {
+    editingTodo.value = null
+  })
 }
 
 const handleEditTodo = (todo) => {
@@ -224,22 +229,19 @@ const handleEditTodo = (todo) => {
     pendingEditTodo.value = todo
     showConfirmDialog.value = true
   } else {
-    showTaskEditor.value = false // 先关闭编辑器
+    editingTodo.value = { ...todo }
+    showTaskEditor.value = true
     nextTick(() => {
-      editingTodo.value = { ...todo } // 创建一个新的对象来触发响应式更新
-      showTaskEditor.value = true // 然后再打开编辑器
-      nextTick(() => {
-        const editorElement = taskEditorRef.value?.$el
-        if (editorElement) {
-          const headerHeight = 64
-          const marginTop = 20
-          const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
-          window.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth'
-          })
-        }
-      })
+      const editorElement = taskEditorRef.value?.$el
+      if (editorElement) {
+        const headerHeight = 64
+        const marginTop = 20
+        const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        })
+      }
     })
   }
 }
@@ -247,23 +249,20 @@ const handleEditTodo = (todo) => {
 // 处理确认编辑
 const handleConfirmEdit = () => {
   if (pendingEditTodo.value) {
-    showTaskEditor.value = false // 先关闭编辑器
+    editingTodo.value = { ...pendingEditTodo.value }
+    showTaskEditor.value = true
+    pendingEditTodo.value = null
     nextTick(() => {
-      editingTodo.value = { ...pendingEditTodo.value } // 创建一个新的对象来触发响应式更新
-      showTaskEditor.value = true // 然后再打开编辑器
-      pendingEditTodo.value = null
-      nextTick(() => {
-        const editorElement = taskEditorRef.value?.$el
-        if (editorElement) {
-          const headerHeight = 64
-          const marginTop = 20
-          const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
-          window.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth'
-          })
-        }
-      })
+      const editorElement = taskEditorRef.value?.$el
+      if (editorElement) {
+        const headerHeight = 64
+        const marginTop = 20
+        const targetPosition = editorElement.getBoundingClientRect().top + window.pageYOffset - headerHeight - marginTop
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        })
+      }
     })
   }
 }
@@ -289,7 +288,7 @@ const handleDialogClose = (done) => {
   done()
 }
 
-// 清空标签选择
+// 清空标签���择
 const clearTags = () => {
   selectedTags.value = []
 }
